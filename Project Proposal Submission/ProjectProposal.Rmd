@@ -6,7 +6,7 @@ output: html_document
 
 ## Objectives:
 
-What questions are you trying to answer? Define the overall objective of your project; then break down to 5-10 coherent research aims and/or sub-questions.
+[What questions are you trying to answer? Define the overall objective of your project; then break down to 5-10 coherent research aims and/or sub-questions.]
 
 ## Datasets:
 
