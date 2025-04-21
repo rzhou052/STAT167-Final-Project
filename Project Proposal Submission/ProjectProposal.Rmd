@@ -1,0 +1,13 @@
+---
+title: "Project Proposal"
+authors: "Richard Zhou, Adam Rui, Jonathan Darius, Ojasvi Godha, Ryan Huang, Isaac Kang"
+output: html_document
+---
+
+## Objectives:
+
+## Datasets:
+
+## Our Plan:
+
+## Alternative Strategies/Backup Plans:
