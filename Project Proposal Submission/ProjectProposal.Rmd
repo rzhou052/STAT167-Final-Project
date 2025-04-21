@@ -6,8 +6,16 @@ output: html_document
 
 ## Objectives:
 
+What questions are you trying to answer? Define the overall objective of your project; then break down to 5-10 coherent research aims and/or sub-questions.
+
 ## Datasets:
+
+[What dataset(s) will you use? You should have already found and taken a first look at the data set(s). How many columns and rows? Include your exploratory data analysis and some visualization! Make sure the data is reasonably clean and contains enough information to answer your questions. Which variables in the table are most relevant to your questions? Do you plan to acquire additional datasets?]
 
 ## Our Plan:
 
+[What do you plan to do with the data to answer your questions? For example, what assumptions will you make? What plots will you generate? What models will you explore? What evaluation approaches will you use? Some preliminary data analysis and modeling results will be a plus, but not a must.]
+
 ## Alternative Strategies/Backup Plans:
+
+[What if your ideas won’t work out? Include a section called “Alternative Strategies/Backup Plans”, list 2-3 other ideas you have brainstormed, each with a couple bullet points of details.]
