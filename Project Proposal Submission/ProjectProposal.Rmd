@@ -4,13 +4,60 @@ authors: "Richard Zhou, Adam Rui, Jonathan Darius, Ojasvi Godha, Ryan Huang, Isa
 output: html_document
 ---
 
+## Installation and Packages
+
+```{r}
+# install.packages("tidyverse")
+# install.packages("nycflights13")
+# install.packages("nycflights23")
+
+library("tidyverse")
+library("nycflights13")
+library("nycflights23")
+```
+
 ## Objectives:
 
-[What questions are you trying to answer? Define the overall objective of your project; then break down to 5-10 coherent research aims and/or sub-questions.]
+Our overall objective of this project is to analyze and compare flight data from 2013 and 2023 using the nycflights13 and nycflights23 packages. We aim to identify patterns, trends, and key factors affecting flight performance, delays, and operations over time. Our research aims to answer the following questions:
+
+1.   Have flight delays improved or gotten worse between 2013 and 2023?
+
+2.  To expand on Question #1, have individual airlines gotten better or worse with delays over time?
+
+3.  How does weather impact flight performance, and has it changed over time?
+
+4.  Which airports have seen the largest increase or decrease in traffic?
+
+5.  Have there been any big changes in popular destinations from NYC between 2013 and 2023?
+
+6.  Is there a seasonal pattern to flight delays? (Such as holidays)
+
+7.  What are the most reliable airlines, and has this changed over time?
 
 ## Datasets:
 
-[What dataset(s) will you use? You should have already found and taken a first look at the data set(s). How many columns and rows? Include your exploratory data analysis and some visualization! Make sure the data is reasonably clean and contains enough information to answer your questions. Which variables in the table are most relevant to your questions? Do you plan to acquire additional datasets?]
+[Include your exploratory data analysis and some visualization! Make sure the data is reasonably clean and contains enough information to answer your questions. Which variables in the table are most relevant to your questions? Do you plan to acquire additional datasets?]\
+\
+We plan on using the packages nycflights13 and nycflights23, using the datasets provided in both. Specifically, we will be focusing on flights, airlines, airports, and weather from both packages.
+
+```{r}
+# listing dimensions of datasets
+dimensions <- tibble(name = character(), rows = integer(), cols = integer())
+
+dimensions <- add_row(dimensions, name = "flights_2013", rows = nrow(nycflights13::flights), cols = ncol(nycflights13::flights))
+dimensions <- add_row(dimensions, name = "flights_2023", rows = nrow(nycflights23::flights), cols = ncol(nycflights23::flights))
+
+dimensions <- add_row(dimensions, name = "airlines_2013", rows = nrow(nycflights13::airlines), cols = ncol(nycflights13::airlines))
+dimensions <- add_row(dimensions, name = "airlines_2023", rows = nrow(nycflights23::airlines), cols = ncol(nycflights23::airlines))
+
+dimensions <- add_row(dimensions, name = "airports_2013", rows = nrow(nycflights13::airports), cols = ncol(nycflights13::airports))
+dimensions <- add_row(dimensions, name = "airports_2023", rows = nrow(nycflights23::airports), cols = ncol(nycflights23::airports))
+
+dimensions <- add_row(dimensions, name = "weather_2013", rows = nrow(nycflights13::weather), cols = ncol(nycflights13::weather))
+dimensions <- add_row(dimensions, name = "weather_2023", rows = nrow(nycflights23::weather), cols = ncol(nycflights23::weather))
+
+print(dimensions)
+```
 
 ## Our Plan:
 
