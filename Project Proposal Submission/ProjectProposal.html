@@ -353,20 +353,105 @@ display: none;
 </div>
 
 
+<div id="installation-and-packages" class="section level2">
+<h2>Installation and Packages</h2>
+<pre class="r"><code># install.packages(&quot;tidyverse&quot;)
+# install.packages(&quot;nycflights13&quot;)
+# install.packages(&quot;nycflights23&quot;)
+
+library(&quot;tidyverse&quot;)</code></pre>
+<pre><code>## Warning: package &#39;tidyverse&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;ggplot2&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;tibble&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;tidyr&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;readr&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;purrr&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;dplyr&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;stringr&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;forcats&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## Warning: package &#39;lubridate&#39; was built under R version 4.4.2</code></pre>
+<pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+## ✔ dplyr     1.1.4     ✔ readr     2.1.5
+## ✔ forcats   1.0.0     ✔ stringr   1.5.1
+## ✔ ggplot2   3.5.1     ✔ tibble    3.2.1
+## ✔ lubridate 1.9.3     ✔ tidyr     1.3.1
+## ✔ purrr     1.0.2     
+## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## ✖ dplyr::filter() masks stats::filter()
+## ✖ dplyr::lag()    masks stats::lag()
+## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+<pre class="r"><code>library(&quot;nycflights13&quot;)</code></pre>
+<pre><code>## Warning: package &#39;nycflights13&#39; was built under R version 4.4.3</code></pre>
+<pre class="r"><code>library(&quot;nycflights23&quot;)</code></pre>
+<pre><code>## Warning: package &#39;nycflights23&#39; was built under R version 4.4.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;nycflights23&#39;
+## 
+## The following objects are masked from &#39;package:nycflights13&#39;:
+## 
+##     airlines, airports, flights, planes, weather</code></pre>
+</div>
 <div id="objectives" class="section level2">
 <h2>Objectives:</h2>
-<p>What questions are you trying to answer? Define the overall objective
-of your project; then break down to 5-10 coherent research aims and/or
-sub-questions.</p>
+<p>Our overall objective of this project is to analyze and compare
+flight data from 2013 and 2023 using the nycflights13 and nycflights23
+packages. We aim to identify patterns, trends, and key factors affecting
+flight performance, delays, and operations over time. Our research aims
+to answer the following questions:</p>
+<ol style="list-style-type: decimal">
+<li><p>Have flight delays improved or gotten worse between 2013 and
+2023?</p></li>
+<li><p>To expand on Question #1, have individual airlines gotten better
+or worse with delays over time?</p></li>
+<li><p>How does weather impact flight performance, and has it changed
+over time?</p></li>
+<li><p>Which airports have seen the largest increase or decrease in
+traffic?</p></li>
+<li><p>Have there been any big changes in popular destinations from NYC
+between 2013 and 2023?</p></li>
+<li><p>Is there a seasonal pattern to flight delays? (Such as
+holidays)</p></li>
+<li><p>What are the most reliable airlines, and has this changed over
+time?</p></li>
+</ol>
 </div>
 <div id="datasets" class="section level2">
 <h2>Datasets:</h2>
-<p>[What dataset(s) will you use? You should have already found and
-taken a first look at the data set(s). How many columns and rows?
-Include your exploratory data analysis and some visualization! Make sure
-the data is reasonably clean and contains enough information to answer
-your questions. Which variables in the table are most relevant to your
-questions? Do you plan to acquire additional datasets?]</p>
+<p>[Include your exploratory data analysis and some visualization! Make
+sure the data is reasonably clean and contains enough information to
+answer your questions. Which variables in the table are most relevant to
+your questions? Do you plan to acquire additional datasets?]<br />
+<br />
+We plan on using the packages nycflights13 and nycflights23, using the
+datasets provided in both. Specifically, we will be focusing on flights,
+airlines, airports, and weather from both packages.</p>
+<pre class="r"><code># listing dimensions of datasets
+dimensions &lt;- tibble(name = character(), rows = integer(), cols = integer())
+
+dimensions &lt;- add_row(dimensions, name = &quot;flights_2013&quot;, rows = nrow(nycflights13::flights), cols = ncol(nycflights13::flights))
+dimensions &lt;- add_row(dimensions, name = &quot;flights_2023&quot;, rows = nrow(nycflights23::flights), cols = ncol(nycflights23::flights))
+
+dimensions &lt;- add_row(dimensions, name = &quot;airlines_2013&quot;, rows = nrow(nycflights13::airlines), cols = ncol(nycflights13::airlines))
+dimensions &lt;- add_row(dimensions, name = &quot;airlines_2023&quot;, rows = nrow(nycflights23::airlines), cols = ncol(nycflights23::airlines))
+
+dimensions &lt;- add_row(dimensions, name = &quot;airports_2013&quot;, rows = nrow(nycflights13::airports), cols = ncol(nycflights13::airports))
+dimensions &lt;- add_row(dimensions, name = &quot;airports_2023&quot;, rows = nrow(nycflights23::airports), cols = ncol(nycflights23::airports))
+
+dimensions &lt;- add_row(dimensions, name = &quot;weather_2013&quot;, rows = nrow(nycflights13::weather), cols = ncol(nycflights13::weather))
+dimensions &lt;- add_row(dimensions, name = &quot;weather_2023&quot;, rows = nrow(nycflights23::weather), cols = ncol(nycflights23::weather))
+
+print(dimensions)</code></pre>
+<pre><code>## # A tibble: 8 × 3
+##   name            rows  cols
+##   &lt;chr&gt;          &lt;int&gt; &lt;int&gt;
+## 1 flights_2013  336776    19
+## 2 flights_2023  435352    19
+## 3 airlines_2013     16     2
+## 4 airlines_2023     14     2
+## 5 airports_2013   1458     8
+## 6 airports_2023   1255     8
+## 7 weather_2013   26115    15
+## 8 weather_2023   26207    15</code></pre>
 </div>
 <div id="our-plan" class="section level2">
 <h2>Our Plan:</h2>
