@@ -14,6 +14,7 @@ output: html_document
 library("tidyverse")
 library("nycflights13")
 library("nycflights23")
+library("dplyr")
 ```
 
 ## Objectives:
@@ -57,6 +58,25 @@ dimensions <- add_row(dimensions, name = "weather_2013", rows = nrow(nycflights1
 dimensions <- add_row(dimensions, name = "weather_2023", rows = nrow(nycflights23::weather), cols = ncol(nycflights23::weather))
 
 print(dimensions)
+```
+```{r}
+flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
+
+flights_clean <- flights_combined %>%
+  filter(!is.na(dep_delay), !is.na(arr_delay)) %>%
+  left_join(nycflights13::airlines, by = "carrier") %>%
+  left_join(nycflights13::airports, by = c("dest" = "faa"))
+```
+
+
+Exploring flight delay over time:
+```{r}
+flights_clean %>%
+  group_by(year) %>%
+  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  ggplot(aes(x = factor(year), y = avg_dep_delay)) +
+  geom_col() +
+  labs(title = "Average Departure Delay (2013 vs 2023)", x = "Year", y = "Delay (mins)")
 ```
 
 ## Our Plan:
