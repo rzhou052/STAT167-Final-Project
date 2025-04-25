@@ -101,4 +101,10 @@ flights_weather %>%
 
 ## Alternative Strategies/Backup Plans:
 
-[What if your ideas won’t work out? Include a section called “Alternative Strategies/Backup Plans”, list 2-3 other ideas you have brainstormed, each with a couple bullet points of details.]
+In the case our initial objectives don't work out as planned, here are a couple of alternative questions we came up with: 
+
+1. Are there certain aircrafts or tail numbers that seem to be more prone to delays? 
+    - We can analyze the delay times reported for each flight and see if there is a noticable pattern between the delay times and the types of aircrafts or tail numbers. 
+
+2. Does the data support the idea that an aircraft with more flights per day tend to experience more delays due to the tight scheduling? 
+    - We would look at aircrafts that are listed for multiple flights in a single day and see if the reported delay times are significant enough to prove that there is a reasonable relation between number of flights per day and flight delays. 
