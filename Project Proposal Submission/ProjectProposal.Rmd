@@ -14,6 +14,7 @@ output: html_document
 library("tidyverse")
 library("nycflights13")
 library("nycflights23")
+library("dplyr")
 ```
 
 ## Objectives:
@@ -57,6 +58,41 @@ dimensions <- add_row(dimensions, name = "weather_2013", rows = nrow(nycflights1
 dimensions <- add_row(dimensions, name = "weather_2023", rows = nrow(nycflights23::weather), cols = ncol(nycflights23::weather))
 
 print(dimensions)
+```
+```{r}
+flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
+
+flights_clean <- flights_combined %>%
+  filter(!is.na(dep_delay), !is.na(arr_delay)) %>%
+  left_join(nycflights13::airlines, by = "carrier") %>%
+  left_join(nycflights13::airports, by = c("dest" = "faa"))
+```
+
+
+Exploring flight delay over time based on carrier:
+
+
+```{r}
+delay_by_carrier <- flights_clean %>%
+  group_by(name.x, year) %>%
+  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop')
+
+ggplot(delay_by_carrier, aes(x = name.x, y = avg_dep_delay, fill = factor(year))) +
+  geom_col(position = position_dodge2(width = 0.8, preserve = "single")) +
+  coord_flip() +
+  labs(title = "Average Departure Delay by Carrier (2013 vs. 2023)", x = "Airline", y = "Avg Delay (mins)", fill = "Year")
+```
+
+Exploring how weather has impacted flight times:
+
+```{r}
+flights_weather <- bind_rows((nycflights13::flights %>% left_join(nycflights13::weather, by = c("origin", "time_hour"))), (nycflights23::flights %>% left_join(nycflights23::weather, by = c("origin", "time_hour"))))
+
+flights_weather %>%
+  ggplot(aes(x = precip, y = dep_delay)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", color = "red") +
+  labs(title = "Departure Delays vs Precipitation", x = "Precipitation (inches)", y = "Delay (mins)")
 ```
 
 ## Our Plan:
