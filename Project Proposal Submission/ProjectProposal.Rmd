@@ -86,11 +86,10 @@ ggplot(delay_by_carrier, aes(x = name.x, y = avg_dep_delay, fill = factor(year))
 Exploring how weather has impacted flight times:
 
 ```{r}
-flights_weather <- nycflights13::weather %>%
-  left_join(nycflights23::weather, by = c("origin", "time_hour"))
+flights_weather <- bind_rows((nycflights13::flights %>% left_join(nycflights13::weather, by = c("origin", "time_hour"))), (nycflights23::flights %>% left_join(nycflights23::weather, by = c("origin", "time_hour"))))
 
 flights_weather %>%
-  ggplot(aes(x = precip, y = factor(delay_by_carrier))) +
+  ggplot(aes(x = precip, y = dep_delay)) +
   geom_point(alpha = 0.2) +
   geom_smooth(method = "lm", color = "red") +
   labs(title = "Departure Delays vs Precipitation", x = "Precipitation (inches)", y = "Delay (mins)")
