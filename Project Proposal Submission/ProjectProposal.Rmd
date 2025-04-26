@@ -136,6 +136,8 @@ flights_clean %>%
 #### 5. Weather Impact Check
 
 ```{r}
+flights_weather <- bind_rows((nycflights13::flights %>% left_join(nycflights13::weather, by = c("origin", "time_hour"))), (nycflights23::flights %>% left_join(nycflights23::weather, by = c("origin", "time_hour"))))
+
 flights_weather %>%
   mutate(high_precip = precip > 0.1) %>%
   group_by(high_precip) %>%
@@ -174,8 +176,6 @@ ggplot(delay_by_carrier, aes(x = name.x, y = avg_dep_delay, fill = factor(year))
 Exploring how weather has impacted flight times:
 
 ```{r}
-flights_weather <- bind_rows((nycflights13::flights %>% left_join(nycflights13::weather, by = c("origin", "time_hour"))), (nycflights23::flights %>% left_join(nycflights23::weather, by = c("origin", "time_hour"))))
-
 flights_weather %>%
   ggplot(aes(x = precip, y = dep_delay)) +
   geom_point(alpha = 0.2) +
