@@ -72,18 +72,27 @@ flights_clean <- flights_combined %>%
 
 ### Preliminary Data Analysis
 
-#### 1. General Summary of Departure Delays
+#### 1. General Summary of Departure Delays, and Comparison of delay from year to year based on airline.
 
 ```{r}
 dep_delay_summary <- flights_clean %>%
   group_by(year) %>%
   summarise(
-    avg_dep_delay = mean(dep_delay, na.rm = TRUE),
+    avg_dep_delay = mean(dep_delay, na.rm = TRUE), #calculates the average delay for the entire year
     median_dep_delay = median(dep_delay, na.rm = TRUE),
     perc_flights_delayed = mean(dep_delay > 15) * 100
   )
 
 print(dep_delay_summary)
+
+delay_by_carrier <- flights_clean %>%
+  group_by(name.x, year) %>% #specifies to calculate the average fo each airline as well
+  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop')
+
+ggplot(delay_by_carrier, aes(x = name.x, y = avg_dep_delay, fill = factor(year))) +
+  geom_col(position = position_dodge2(width = 0.8, preserve = "single")) + #puts the years side by side for each airline
+  coord_flip() +
+  labs(title = "Average Departure Delay by Carrier (2013 vs. 2023)", x = "Airline", y = "Avg Delay (mins)", fill = "Year")
 ```
 
 -   This table shows the average and median departure delays for 2013 and 2023, along with the percentage of flights delayed by more than 15 minutes. It gives an initial view if flight punctuality has improved or worsened over time.
@@ -104,12 +113,12 @@ print(arr_delay_summary)
 
 -   This summary focuses on arrival delays, calculating similar statistics to departure delays. It helps us check whether late departures also result in late arrivals and if arrival performance changed between 2013 and 2023.
 
-#### 3. Number of flights per airport
+#### 3. Number of departures per airport
 
 ```{r}
 airport_traffic <- flights_clean %>%
   group_by(origin, year) %>%
-  summarise(num_flights = n(), .groups = 'drop')
+  summarise(num_flights = n(), .groups = 'drop') #counts the number of  outgoing flights per airport per year
 
 ggplot(airport_traffic, aes(x = origin, y = num_flights, fill = factor(year))) +
   geom_col(position = "dodge") +
@@ -122,9 +131,9 @@ ggplot(airport_traffic, aes(x = origin, y = num_flights, fill = factor(year))) +
 
 ```{r}
 flights_clean %>%
-  mutate(month = month(time_hour, label = TRUE)) %>%
+  mutate(month = month(time_hour, label = TRUE)) %>% #gets the month from time_hour
   group_by(month, year) %>%
-  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop') %>%
+  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop') %>% #computes the average departure delay for that month
   ggplot(aes(x = month, y = avg_dep_delay, group = year, color = factor(year))) +
   geom_line(size = 1.2) +
   geom_point(size = 2) +
@@ -136,13 +145,20 @@ flights_clean %>%
 #### 5. Weather Impact Check
 
 ```{r}
-flights_weather <- bind_rows((nycflights13::flights %>% left_join(nycflights13::weather, by = c("origin", "time_hour"))), (nycflights23::flights %>% left_join(nycflights23::weather, by = c("origin", "time_hour"))))
+flights_weather <- bind_rows((nycflights13::flights %>% left_join(nycflights13::weather, by = c("origin", "time_hour"))), (nycflights23::flights %>% left_join(nycflights23::weather, by = c("origin", "time_hour")))) #joins the precipitation data for 2013 and 2023
 
 flights_weather %>%
   mutate(high_precip = precip > 0.1) %>%
   group_by(high_precip) %>%
   summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
   print()
+
+flights_weather %>%
+  filter(!is.na(dep_delay), !is.na(precip)) %>% #removes missing precipitation values
+  ggplot(aes(x = precip, y = dep_delay)) + 
+  geom_point(alpha = 0.1) +
+  geom_smooth(method = "lm", color = "red") +
+  labs(title = "Departure Delays vs Precipitation", x = "Precipitation (inches)", y = "Delay (mins)")
 ```
 
 -   Here, we compare the average departure delay between flights with high precipitation (rain, snow, etc.) and those with little to no precipitation. It gives quick insight into how weather affects flight delays.
@@ -152,36 +168,13 @@ flights_weather %>%
 ```{r}
 reliable_airlines <- flights_clean %>%
   group_by(name.x, year) %>%
-  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE), .groups = 'drop') %>%
+  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE), .groups = 'drop') %>% #calculates the average delay per airline per year
   arrange(avg_dep_delay)
 
-print(reliable_airlines %>% group_by(year) %>% slice_head(n = 5))  # Top 5 for each year
+print(reliable_airlines %>% group_by(year) %>% slice_head(n = 5))
 ```
 
 -   This table lists the top 5 airlines with the lowest average departure delays for each year. It helps identify the most reliable carriers in 2013 and 2023, and see if rankings shifted over the decade.
-
-Exploring flight delay over time based on carrier:
-
-```{r}
-delay_by_carrier <- flights_clean %>%
-  group_by(name.x, year) %>%
-  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop')
-
-ggplot(delay_by_carrier, aes(x = name.x, y = avg_dep_delay, fill = factor(year))) +
-  geom_col(position = position_dodge2(width = 0.8, preserve = "single")) +
-  coord_flip() +
-  labs(title = "Average Departure Delay by Carrier (2013 vs. 2023)", x = "Airline", y = "Avg Delay (mins)", fill = "Year")
-```
-
-Exploring how weather has impacted flight times:
-
-```{r}
-flights_weather %>%
-  ggplot(aes(x = precip, y = dep_delay)) +
-  geom_point(alpha = 0.2) +
-  geom_smooth(method = "lm", color = "red") +
-  labs(title = "Departure Delays vs Precipitation", x = "Precipitation (inches)", y = "Delay (mins)")
-```
 
 ## Our Plan:
 
