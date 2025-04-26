@@ -69,6 +69,89 @@ flights_clean <- flights_combined %>%
 ```
 
 
+# Preliminary Data Analysis
+
+# 1. General Summary of Departure Delays
+```{r}
+dep_delay_summary <- flights_clean %>%
+  group_by(year) %>%
+  summarise(
+    avg_dep_delay = mean(dep_delay, na.rm = TRUE),
+    median_dep_delay = median(dep_delay, na.rm = TRUE),
+    perc_flights_delayed = mean(dep_delay > 15) * 100
+  )
+
+print(dep_delay_summary)
+```
+
+- This table shows the average and median departure delays for 2013 and 2023, along with the percentage of flights delayed by more than 15 minutes. It gives an initial view if flight punctuality has improved or worsened over time.
+
+# 2. Summary of Arrival Delays
+```{r}
+arr_delay_summary <- flights_clean %>%
+  group_by(year) %>%
+  summarise(
+    avg_arr_delay = mean(arr_delay, na.rm = TRUE),
+    median_arr_delay = median(arr_delay, na.rm = TRUE),
+    perc_arrivals_delayed = mean(arr_delay > 15) * 100
+  )
+
+print(arr_delay_summary)
+```
+
+- This summary focuses on arrival delays, calculating similar statistics to departure delays. It helps us check whether late departures also result in late arrivals and if arrival performance changed between 2013 and 2023.
+
+# 3. Number of flights per airport
+```{r}
+airport_traffic <- flights_clean %>%
+  group_by(origin, year) %>%
+  summarise(num_flights = n(), .groups = 'drop')
+
+ggplot(airport_traffic, aes(x = origin, y = num_flights, fill = factor(year))) +
+  geom_col(position = "dodge") +
+  labs(title = "Number of Flights per NYC Airport (2013 vs 2023)", x = "Airport", y = "Number of Flights", fill = "Year")
+```
+
+- This plot compares the total number of flights at each major NYC airport (JFK, LGA, EWR) between 2013 and 2023. It highlights if traffic increased or decreased at certain airports, helping answer which airports saw the biggest changes.
+
+# 4. Seasonality of Delays
+```{r}
+flights_clean %>%
+  mutate(month = month(time_hour, label = TRUE)) %>%
+  group_by(month, year) %>%
+  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop') %>%
+  ggplot(aes(x = month, y = avg_dep_delay, group = year, color = factor(year))) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  labs(title = "Seasonal Pattern of Departure Delays", x = "Month", y = "Avg Departure Delay (mins)", color = "Year")
+```
+- This line chart shows how departure delays vary across months for both years. Peaks in certain months could point to holiday seasons, weather events, or seasonal congestion affecting flight performance.
+
+# 5. Weather Impact Check
+```{r}
+flights_weather %>%
+  mutate(high_precip = precip > 0.1) %>%
+  group_by(high_precip) %>%
+  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
+  print()
+```
+
+- Here, we compare the average departure delay between flights with high precipitation (rain, snow, etc.) and those with little to no precipitation. It gives quick insight into how weather affects flight delays.
+
+# 6. Most Reliable Airlines (lowest average departure delay)
+```{r}
+reliable_airlines <- flights_clean %>%
+  group_by(name.x, year) %>%
+  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE), .groups = 'drop') %>%
+  arrange(avg_dep_delay)
+
+print(reliable_airlines %>% group_by(year) %>% slice_head(n = 5))  # Top 5 for each year
+```
+
+- This table lists the top 5 airlines with the lowest average departure delays for each year. It helps identify the most reliable carriers in 2013 and 2023, and see if rankings shifted over the decade.
+
+
+
 Exploring flight delay over time based on carrier:
 
 
