@@ -7,14 +7,15 @@ output: html_document
 ## Installation and Packages
 
 ```{r}
-# install.packages("tidyverse")
-# install.packages("nycflights13")
-# install.packages("nycflights23")
+#install.packages("tidyverse")
+#install.packages("nycflights13")
+#install.packages("nycflights23")
 
 library("tidyverse")
 library("nycflights13")
 library("nycflights23")
 library("dplyr")
+library(gridExtra)
 ```
 
 ## Objectives:
@@ -177,6 +178,71 @@ flights_weather %>%
   geom_smooth(method = "lm", color = "red") +
   labs(title = "Departure Delays vs Precipitation", x = "Precipitation (inches)", y = "Delay (mins)")
 ```
+
+```{r}
+flights_clean
+```
+# 7. Distribution Checks
+```{r}
+# Departure Delay Histogram
+plot1 <- ggplot(flights_clean, aes(x = dep_delay)) +
+          geom_histogram(aes(y = ..density..), bins = 50, fill = "lightblue", color = "black") +
+          geom_density(color = "red", size = 1.2) +
+          labs(title = "Distribution of Departure Delay", x = "Departure Delay (minutes)") +
+          theme_minimal()
+
+# Air Time Histogram
+plot2 <- ggplot(flights_clean, aes(x = air_time)) +
+          geom_histogram(aes(y = ..density..), bins = 50, fill = "lightgreen", color = "black") +
+          geom_density(color = "red", size = 1.2) +
+          labs(title = "Distribution of Air Time", x = "Air Time (minutes)") +
+          theme_minimal()
+
+# Distance Histogram
+plot3 <- ggplot(flights_clean, aes(x = distance)) +
+          geom_histogram(aes(y = ..density..), bins = 50, fill = "blue", color = "black") +
+          geom_density(color = "red", size = 1.2) +
+          labs(title = "Distribution of Flight Distance", x = "Distance (miles)") +
+          theme_minimal()
+
+# Departure Time Histogram
+plot4 <- ggplot(flights_clean, aes(x = dep_time)) +
+          geom_histogram(aes(y = ..density..), bins = 50, fill = "orange", color = "black") +
+          geom_density(color = "red", size = 1.2) +
+          labs(title = "Distribution of Months", x = "Month") +
+          theme_minimal()
+
+grid.arrange(plot1, plot2, plot3, plot4, ncol=2)
+```
+
+```{r}
+p1 <- ggplot(flights_clean, aes(sample = air_time)) +
+        stat_qq() +
+        stat_qq_line() +
+        labs(title = "Q-Q Plot of Air Time") +
+        theme_minimal()
+
+p2 <- ggplot(flights_clean, aes(sample = dep_delay)) +
+        stat_qq() +
+        stat_qq_line() +
+        labs(title = "Q-Q Plot of Departure Delays") +
+        theme_minimal()
+
+p3 <- ggplot(flights_clean, aes(sample = distance)) +
+        stat_qq() +
+        stat_qq_line() +
+        labs(title = "Q-Q Plot of Distance") +
+        theme_minimal()
+
+p4 <- ggplot(flights_clean, aes(sample = dep_time)) +
+        stat_qq() +
+        stat_qq_line() +
+        labs(title = "Q-Q Plot of Departure Time") +
+        theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, ncol=2)
+```
+- The 2 previous visualizations are meant to look at the distributions of distance, departure times, air time, departure delays, and whether or not they follow normality assumptions. If we end up applying a linear regression model, we needed to look at whether the features follow said assumptions, and in our instance they don't. The histograms enforce this due to their either highly skewed distributions or their non-normal distribution. The QQ plot further reinforces this since most QQ lines don't fit on the data properly, which shows that we may need to apply transformations to enforce the normality assumption.
 
 ## Our Plan:
 
