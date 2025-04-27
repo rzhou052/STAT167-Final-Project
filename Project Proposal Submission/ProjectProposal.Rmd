@@ -161,7 +161,9 @@ flights_weather %>%
   labs(title = "Departure Delays vs Precipitation", x = "Precipitation (inches)", y = "Delay (mins)")
 ```
 
-# 7. Distribution Checks
+- Here, we compare the average departure delay between flights with high precipitation (rain, snow, etc.) and those with little to no precipitation. It gives quick insight into how weather affects flight delays.
+
+#### 6. Distribution Checks
 ```{r}
 # Departure Delay Histogram
 plot1 <- ggplot(flights_clean, aes(x = dep_delay)) +
@@ -223,9 +225,7 @@ grid.arrange(p1, p2, p3, p4, ncol=2)
 ```
 - The 2 previous visualizations are meant to look at the distributions of distance, departure times, air time, departure delays, and whether or not they follow normality assumptions. If we end up applying a linear regression model, we needed to look at whether the features follow said assumptions, and in our instance they don't. The histograms enforce this due to their either highly skewed distributions or their non-normal distribution. The QQ plot further reinforces this since most QQ lines don't fit on the data properly, which shows that we may need to apply transformations to enforce the normality assumption.
 
-- Here, we compare the average departure delay between flights with high precipitation (rain, snow, etc.) and those with little to no precipitation. It gives quick insight into how weather affects flight delays.
-
-#### 6. Most Reliable Airlines (lowest average departure delay)
+#### 7. Most Reliable Airlines (lowest average departure delay)
 
 ```{r}
 reliable_airlines <- flights_clean %>%
