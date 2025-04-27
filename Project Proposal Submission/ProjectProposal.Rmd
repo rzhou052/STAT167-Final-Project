@@ -22,7 +22,7 @@ library(gridExtra)
 
 Our overall objective of this project is to analyze and compare flight data from 2013 and 2023 using the nycflights13 and nycflights23 packages. We aim to identify patterns, trends, and key factors affecting flight performance, delays, and operations over time. Our research aims to answer the following questions:
 
-1.   Have flight delays improved or gotten worse between 2013 and 2023?
+1.  Have flight delays improved or gotten worse between 2013 and 2023?
 
 2.  To expand on Question #1, have individual airlines gotten better or worse with delays over time?
 
@@ -60,6 +60,7 @@ dimensions <- add_row(dimensions, name = "weather_2023", rows = nrow(nycflights2
 
 print(dimensions)
 ```
+
 ```{r}
 flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
 
@@ -69,25 +70,35 @@ flights_clean <- flights_combined %>%
   left_join(nycflights13::airports, by = c("dest" = "faa"))
 ```
 
+### Preliminary Data Analysis
 
-# Preliminary Data Analysis
+#### 1. General Summary of Departure Delays, and Comparison of delay from year to year based on airline.
 
-# 1. General Summary of Departure Delays
 ```{r}
 dep_delay_summary <- flights_clean %>%
   group_by(year) %>%
   summarise(
-    avg_dep_delay = mean(dep_delay, na.rm = TRUE),
+    avg_dep_delay = mean(dep_delay, na.rm = TRUE), #calculates the average delay for the entire year
     median_dep_delay = median(dep_delay, na.rm = TRUE),
     perc_flights_delayed = mean(dep_delay > 15) * 100
   )
 
 print(dep_delay_summary)
+
+delay_by_carrier <- flights_clean %>%
+  group_by(name.x, year) %>% #specifies to calculate the average fo each airline as well
+  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop')
+
+ggplot(delay_by_carrier, aes(x = name.x, y = avg_dep_delay, fill = factor(year))) +
+  geom_col(position = position_dodge2(width = 0.8, preserve = "single")) + #puts the years side by side for each airline
+  coord_flip() +
+  labs(title = "Average Departure Delay by Carrier (2013 vs. 2023)", x = "Airline", y = "Avg Delay (mins)", fill = "Year")
 ```
 
-- This table shows the average and median departure delays for 2013 and 2023, along with the percentage of flights delayed by more than 15 minutes. It gives an initial view if flight punctuality has improved or worsened over time.
+-   This table shows the average and median departure delays for 2013 and 2023, along with the percentage of flights delayed by more than 15 minutes. It gives an initial view if flight punctuality has improved or worsened over time.
 
-# 2. Summary of Arrival Delays
+#### 2. Summary of Arrival Delays
+
 ```{r}
 arr_delay_summary <- flights_clean %>%
   group_by(year) %>%
@@ -100,88 +111,56 @@ arr_delay_summary <- flights_clean %>%
 print(arr_delay_summary)
 ```
 
-- This summary focuses on arrival delays, calculating similar statistics to departure delays. It helps us check whether late departures also result in late arrivals and if arrival performance changed between 2013 and 2023.
+-   This summary focuses on arrival delays, calculating similar statistics to departure delays. It helps us check whether late departures also result in late arrivals and if arrival performance changed between 2013 and 2023.
 
-# 3. Number of flights per airport
+#### 3. Number of departures per airport
+
 ```{r}
 airport_traffic <- flights_clean %>%
   group_by(origin, year) %>%
-  summarise(num_flights = n(), .groups = 'drop')
+  summarise(num_flights = n(), .groups = 'drop') #counts the number of  outgoing flights per airport per year
 
 ggplot(airport_traffic, aes(x = origin, y = num_flights, fill = factor(year))) +
   geom_col(position = "dodge") +
   labs(title = "Number of Flights per NYC Airport (2013 vs 2023)", x = "Airport", y = "Number of Flights", fill = "Year")
 ```
 
-- This plot compares the total number of flights at each major NYC airport (JFK, LGA, EWR) between 2013 and 2023. It highlights if traffic increased or decreased at certain airports, helping answer which airports saw the biggest changes.
+-   This plot compares the total number of flights at each major NYC airport (JFK, LGA, EWR) between 2013 and 2023. It highlights if traffic increased or decreased at certain airports, helping answer which airports saw the biggest changes.
 
-# 4. Seasonality of Delays
+#### 4. Seasonality of Delays
+
 ```{r}
 flights_clean %>%
-  mutate(month = month(time_hour, label = TRUE)) %>%
+  mutate(month = month(time_hour, label = TRUE)) %>% #gets the month from time_hour
   group_by(month, year) %>%
-  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop') %>%
+  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop') %>% #computes the average departure delay for that month
   ggplot(aes(x = month, y = avg_dep_delay, group = year, color = factor(year))) +
   geom_line(size = 1.2) +
   geom_point(size = 2) +
   labs(title = "Seasonal Pattern of Departure Delays", x = "Month", y = "Avg Departure Delay (mins)", color = "Year")
 ```
-- This line chart shows how departure delays vary across months for both years. Peaks in certain months could point to holiday seasons, weather events, or seasonal congestion affecting flight performance.
 
-# 5. Weather Impact Check
+-   This line chart shows how departure delays vary across months for both years. Peaks in certain months could point to holiday seasons, weather events, or seasonal congestion affecting flight performance.
+
+#### 5. Weather Impact Check
+
 ```{r}
+flights_weather <- bind_rows((nycflights13::flights %>% left_join(nycflights13::weather, by = c("origin", "time_hour"))), (nycflights23::flights %>% left_join(nycflights23::weather, by = c("origin", "time_hour")))) #joins the precipitation data for 2013 and 2023
+
 flights_weather %>%
   mutate(high_precip = precip > 0.1) %>%
   group_by(high_precip) %>%
   summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE)) %>%
   print()
-```
-
-- Here, we compare the average departure delay between flights with high precipitation (rain, snow, etc.) and those with little to no precipitation. It gives quick insight into how weather affects flight delays.
-
-# 6. Most Reliable Airlines (lowest average departure delay)
-```{r}
-reliable_airlines <- flights_clean %>%
-  group_by(name.x, year) %>%
-  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE), .groups = 'drop') %>%
-  arrange(avg_dep_delay)
-
-print(reliable_airlines %>% group_by(year) %>% slice_head(n = 5))  # Top 5 for each year
-```
-
-- This table lists the top 5 airlines with the lowest average departure delays for each year. It helps identify the most reliable carriers in 2013 and 2023, and see if rankings shifted over the decade.
-
-
-
-Exploring flight delay over time based on carrier:
-
-
-```{r}
-delay_by_carrier <- flights_clean %>%
-  group_by(name.x, year) %>%
-  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop')
-
-ggplot(delay_by_carrier, aes(x = name.x, y = avg_dep_delay, fill = factor(year))) +
-  geom_col(position = position_dodge2(width = 0.8, preserve = "single")) +
-  coord_flip() +
-  labs(title = "Average Departure Delay by Carrier (2013 vs. 2023)", x = "Airline", y = "Avg Delay (mins)", fill = "Year")
-```
-
-Exploring how weather has impacted flight times:
-
-```{r}
-flights_weather <- bind_rows((nycflights13::flights %>% left_join(nycflights13::weather, by = c("origin", "time_hour"))), (nycflights23::flights %>% left_join(nycflights23::weather, by = c("origin", "time_hour"))))
 
 flights_weather %>%
-  ggplot(aes(x = precip, y = dep_delay)) +
-  geom_point(alpha = 0.2) +
+  filter(!is.na(dep_delay), !is.na(precip)) %>% #removes missing precipitation values
+  ggplot(aes(x = precip, y = dep_delay)) + 
+  geom_point(alpha = 0.1) +
   geom_smooth(method = "lm", color = "red") +
   labs(title = "Departure Delays vs Precipitation", x = "Precipitation (inches)", y = "Delay (mins)")
 ```
 
-```{r}
-flights_clean
-```
 # 7. Distribution Checks
 ```{r}
 # Departure Delay Histogram
@@ -244,16 +223,34 @@ grid.arrange(p1, p2, p3, p4, ncol=2)
 ```
 - The 2 previous visualizations are meant to look at the distributions of distance, departure times, air time, departure delays, and whether or not they follow normality assumptions. If we end up applying a linear regression model, we needed to look at whether the features follow said assumptions, and in our instance they don't. The histograms enforce this due to their either highly skewed distributions or their non-normal distribution. The QQ plot further reinforces this since most QQ lines don't fit on the data properly, which shows that we may need to apply transformations to enforce the normality assumption.
 
+- Here, we compare the average departure delay between flights with high precipitation (rain, snow, etc.) and those with little to no precipitation. It gives quick insight into how weather affects flight delays.
+
+#### 6. Most Reliable Airlines (lowest average departure delay)
+
+```{r}
+reliable_airlines <- flights_clean %>%
+  group_by(name.x, year) %>%
+  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE), .groups = 'drop') %>% #calculates the average delay per airline per year
+  arrange(avg_dep_delay)
+
+print(reliable_airlines %>% group_by(year) %>% slice_head(n = 5))
+```
+
+-   This table lists the top 5 airlines with the lowest average departure delays for each year. It helps identify the most reliable carriers in 2013 and 2023, and see if rankings shifted over the decade.
+
 ## Our Plan:
 
-[What do you plan to do with the data to answer your questions? For example, what assumptions will you make? What plots will you generate? What models will you explore? What evaluation approaches will you use? Some preliminary data analysis and modeling results will be a plus, but not a must.]
+To answer our research questions, we will first clean, merge, and standardize the ‘nycflights13’ and ‘nycflights23’ datasets, ensuring that important variables such as delay times, weather conditions, airline names, and airport locations are consistent across both years. We assume that any missing or inconsistent data can be reasonably filtered out and that the recorded information accurately reflects real-world flight operations.
+
+Throughout the project, we plan to use ggplot2 extensively to generate our visualizations. We will create bar plots comparing average delays across airlines and airports, time series plots showing delay trends over months and seasons, scatter plots with trend lines to examine how weather impacts departure delays, and heatmaps to visualize delays across different times of day and days of the week. For modeling, we will use linear regression to explore how factors like precipitation, wind, and scheduled time influence flight delays. We will evaluate our models using R² values for linear regression, matrices for logistic regression, and diagnostic plots to check for model fit and assumptions.
+
+Through this combination of exploratory plots, statistical modeling, and comparative analysis, we aim to gain insight into how NYC flight performance has evolved over the last decade and what factors have influenced those changes.
 
 ## Alternative Strategies/Backup Plans:
 
-In the case our initial objectives don't work out as planned, here are a couple of alternative questions we came up with: 
+In the case our initial objectives don't work out as planned, here are a couple of alternative questions we came up with:
 
-1. Are there certain aircrafts or tail numbers that seem to be more prone to delays? 
-    - We can analyze the delay times reported for each flight and see if there is a noticable pattern between the delay times and the types of aircrafts or tail numbers. 
-
-2. Does the data support the idea that an aircraft with more flights per day tend to experience more delays due to the tight scheduling? 
-    - We would look at aircrafts that are listed for multiple flights in a single day and see if the reported delay times are significant enough to prove that there is a reasonable relation between number of flights per day and flight delays. 
+1.  Are there certain aircrafts or tail numbers that seem to be more prone to delays?
+    -   We can analyze the delay times reported for each flight and see if there is a noticable pattern between the delay times and the types of aircrafts or tail numbers.
+2.  Does the data support the idea that an aircraft with more flights per day tend to experience more delays due to the tight scheduling?
+    -   We would look at aircrafts that are listed for multiple flights in a single day and see if the reported delay times are significant enough to prove that there is a reasonable relation between number of flights per day and flight delays.
