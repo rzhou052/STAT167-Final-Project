@@ -1,6 +1,12 @@
 ---
-title: "Project Proposal"
-authors: "Richard Zhou, Adam Rui, Jonathan Darius, Ojasvi Godha, Ryan Huang, Isaac Kang"
+title: "Thisisafunnygroupname's Project Proposal"
+author: 
+  - name: "Richard Zhou"
+  - name: "Adam Rui"
+  - name: "Jonathan Darius"
+  - name: "Ojasvi Godha"  
+  - name: "Ryan Huang"
+  - name: "Isaac Kang"
 output: html_document
 ---
 
