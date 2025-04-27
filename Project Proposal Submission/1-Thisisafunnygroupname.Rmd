@@ -1,21 +1,29 @@
 ---
-title: "Project Proposal"
-authors: "Richard Zhou, Adam Rui, Jonathan Darius, Ojasvi Godha, Ryan Huang, Isaac Kang"
+title: "Thisisafunnygroupname's Project Proposal"
+author: 
+  - name: "Richard Zhou"
+  - name: "Adam Rui"
+  - name: "Jonathan Darius"
+  - name: "Ojasvi Godha"  
+  - name: "Ryan Huang"
+  - name: "Isaac Kang"
 output: html_document
 ---
 
 ## Installation and Packages
 
 ```{r}
-#install.packages("tidyverse")
-#install.packages("nycflights13")
-#install.packages("nycflights23")
+# install.packages("tidyverse")
+# install.packages("nycflights13")
+# install.packages("nycflights23")
+# install.packages("dplyr")
+# install.packages("gridExtra")
 
 library("tidyverse")
 library("nycflights13")
 library("nycflights23")
 library("dplyr")
-library(gridExtra)
+library("gridExtra")
 ```
 
 ## Objectives:
@@ -62,6 +70,7 @@ print(dimensions)
 ```
 
 ```{r}
+# cleaning dataset
 flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
 
 flights_clean <- flights_combined %>%
@@ -161,7 +170,10 @@ flights_weather %>%
   labs(title = "Departure Delays vs Precipitation", x = "Precipitation (inches)", y = "Delay (mins)")
 ```
 
-# 7. Distribution Checks
+-   Here, we compare the average departure delay between flights with high precipitation (rain, snow, etc.) and those with little to no precipitation. It gives quick insight into how weather affects flight delays.
+
+#### 6. Distribution Checks
+
 ```{r}
 # Departure Delay Histogram
 plot1 <- ggplot(flights_clean, aes(x = dep_delay)) +
@@ -179,7 +191,7 @@ plot2 <- ggplot(flights_clean, aes(x = air_time)) +
 
 # Distance Histogram
 plot3 <- ggplot(flights_clean, aes(x = distance)) +
-          geom_histogram(aes(y = ..density..), bins = 50, fill = "blue", color = "black") +
+          geom_histogram(aes(y = ..density..), bins = 50, fill = "lightblue", color = "black") +
           geom_density(color = "red", size = 1.2) +
           labs(title = "Distribution of Flight Distance", x = "Distance (miles)") +
           theme_minimal()
@@ -188,7 +200,7 @@ plot3 <- ggplot(flights_clean, aes(x = distance)) +
 plot4 <- ggplot(flights_clean, aes(x = dep_time)) +
           geom_histogram(aes(y = ..density..), bins = 50, fill = "orange", color = "black") +
           geom_density(color = "red", size = 1.2) +
-          labs(title = "Distribution of Months", x = "Month") +
+          labs(title = "Distribution of Departure Times", x = "Departure Time") +
           theme_minimal()
 
 grid.arrange(plot1, plot2, plot3, plot4, ncol=2)
@@ -221,11 +233,10 @@ p4 <- ggplot(flights_clean, aes(sample = dep_time)) +
 
 grid.arrange(p1, p2, p3, p4, ncol=2)
 ```
-- The 2 previous visualizations are meant to look at the distributions of distance, departure times, air time, departure delays, and whether or not they follow normality assumptions. If we end up applying a linear regression model, we needed to look at whether the features follow said assumptions, and in our instance they don't. The histograms enforce this due to their either highly skewed distributions or their non-normal distribution. The QQ plot further reinforces this since most QQ lines don't fit on the data properly, which shows that we may need to apply transformations to enforce the normality assumption.
 
-- Here, we compare the average departure delay between flights with high precipitation (rain, snow, etc.) and those with little to no precipitation. It gives quick insight into how weather affects flight delays.
+-   The 2 previous visualizations are meant to look at the distributions of distance, departure times, air time, departure delays, and whether or not they follow normality assumptions. If we end up applying a linear regression model, we needed to look at whether the features follow said assumptions, and in our instance they don't. The histograms enforce this due to their either highly skewed distributions or their non-normal distribution. The QQ plot further reinforces this since most QQ lines don't fit on the data properly, which shows that we may need to apply transformations to enforce the normality assumption.
 
-#### 6. Most Reliable Airlines (lowest average departure delay)
+#### 7. Most Reliable Airlines (lowest average departure delay)
 
 ```{r}
 reliable_airlines <- flights_clean %>%
