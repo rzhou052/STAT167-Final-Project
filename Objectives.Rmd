@@ -1,0 +1,90 @@
+---
+title: "Objectives"
+output: pdf_document
+date: "2025-05-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Installation and Packages
+
+```{r}
+#install.packages("tidyverse")
+#install.packages("nycflights13")
+#install.packages("nycflights23")
+#install.packages("dplyr")
+#install.packages("gridExtra")
+```
+```{r}
+library("tidyverse")
+library("nycflights13")
+library("nycflights23")
+library("dplyr")
+library("gridExtra")
+```
+
+```{r}
+# cleaning dataset
+flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
+
+flights_clean <- flights_combined %>%
+  filter(!is.na(dep_delay), !is.na(arr_delay)) %>%
+  left_join(nycflights13::airlines, by = "carrier") %>%
+  left_join(nycflights13::airports, by = c("dest" = "faa"))
+
+colnames(flights_clean)
+head(flights_clean)
+```
+
+dep_delay_summary <- flights_clean %>%
+  group_by(year) %>%
+  summarise(
+    avg_dep_delay = mean(dep_delay, na.rm = TRUE), #calculates the average delay for the entire year
+    median_dep_delay = median(dep_delay, na.rm = TRUE),
+    perc_flights_delayed = mean(dep_delay > 15) * 100
+  )
+
+print(dep_delay_summary)
+
+
+##Have flight delays improved or gotten worse between 2013 and 2023?
+
+```{r}
+delay_by_carrier <- flights_clean %>%
+  group_by(name.x, year) %>% #specifies to calculate the average fo each airline as well
+  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop')
+
+dep_delay_model <- lm(data=flights_clean, dep_delay~factor(year))
+summary(dep_delay_model)
+```
+**This model helps us see the overall difference in departure delays between 2013 and 2023. The model shows a statistically significant increase in departure delays from 2013 to 2023, indicated by a positive coefficient with a very small p-value. In this context, we can conclude that that flight departure delays have gotten worse over time.**
+
+```{r}
+arr_delay_model <- lm(data=flights_clean, arr_delay~factor(year))
+summary(arr_delay_model)
+```
+**On the contrary, when we compare the arrival delays, we have a statistically significant decrease, with a negative coefficient and small p-value, indicating that arrival delays have improved between 2013 and 2023.**
+
+
+**For some additional comparison, we can try to see how much more or less departure delays have changed versus arrival delays from 2013 to 2023.**
+
+```{r}
+both_delay_flights <- flights_clean %>%
+  select(year, dep_delay, arr_delay) %>%
+  pivot_longer(cols = c(dep_delay, arr_delay), 
+               names_to = "delay_type", 
+               values_to = "delay_value")
+
+both_delay_model <- lm(data=both_delay_flights, delay_value~factor(year)*delay_type)
+summary(both_delay_model)
+```
+**The key term in the model is factor(year)2023:delay_typedep_delay, which represents the additional change in departure delays from 2013 to 2023 relative to arrival delays. From the two previous models, we know arrival delays improved over the years by about 2.55 minutes and departure delays have gotten worse by about 1.14 minutes. In this combined model, we can see that as the coefficient is positive and, based on the p-value, is statistically significant. With this, we can conclude that the departure delays not only increased over time, but did so to a significantly greater extent than arrival delays decreased.**
+
+## To expand on Question #1, have individual airlines gotten better or worse with delays over time?
+
+```{r}
+delay_model_airline <- lm(data=flights_clean, dep_delay~factor(year) +)
+summary(delay_model)
+```
