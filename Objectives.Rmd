@@ -88,3 +88,47 @@ summary(both_delay_model)
 delay_model_airline <- lm(data=flights_clean, dep_delay~factor(year) +)
 summary(delay_model)
 ```
+**Based on the F-statistic, this model is significant. However, there are a few airlines that seem to be discontinued in 2023, so lets remove them and create a new model.**
+
+```{r}
+# getting airlines that only appear in both years 
+active_airlines <- flights_clean %>%
+  group_by(name.x, year) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  count(name.x) %>%
+  filter(n == 2) %>%
+  pull(name.x)
+
+flights_filtered <- flights_clean %>%
+  filter(name.x %in% active_airlines)
+
+delay_model_airline_filtered <- lm(data=flights_filtered, dep_delay~factor(year) * name.x)
+summary(delay_model_airline_filtered)
+```
+
+
+## graphs 
+
+```{r}
+both_delay_filtered <- flights_filtered %>%
+  select(year, name.x, dep_delay, arr_delay) %>%
+  pivot_longer(cols = c(dep_delay, arr_delay),
+               names_to = "delay_type",
+               values_to = "delay_value")
+```
+
+**Here, we can easily how the average arrival and departure delays have changed between 2013 and 2023. It seems that both arrival and departure delays have gotten worse.**
+
+```{r}
+both_delay_filtered %>%
+  group_by(name.x, year, delay_type) %>%
+  summarise(mean_delay = mean(delay_value, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = mean_delay, color = name.x, group = name.x)) +
+  geom_line(size = 1) +
+  geom_point() +
+  facet_wrap(~delay_type, scales = "free_y") +
+  labs(title = "Trends in Delay by Airline (2013 vs 2023)",
+       x = "Year", y = "Average Delay (min)") +
+  theme_minimal() +
+  theme(legend.position = "none") 
+```
