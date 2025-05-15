@@ -136,6 +136,109 @@ ggplot(airport_traffic, aes(x = origin, y = num_flights, fill = factor(year))) +
 
 -   This plot compares the total number of flights at each major NYC airport (JFK, LGA, EWR) between 2013 and 2023. It highlights if traffic increased or decreased at certain airports, helping answer which airports saw the biggest changes.
 
+```{r}
+# Join each year separately
+fl13 <- nycflights13::flights %>%
+  left_join(nycflights13::weather, by = c("year", "month", "day", "hour", "origin")) %>%
+  mutate(dataset = "2013")
+
+fl23 <- nycflights23::flights %>%
+  left_join(nycflights23::weather, by = c("year", "month", "day", "hour", "origin")) %>%
+  mutate(dataset = "2023")
+
+# Combine both years
+combined_all <- bind_rows(fl13, fl23)
+
+# Clean NaN
+(combined_clean <- combined_all %>%
+  filter(
+    !is.na(dep_delay),
+    !is.na(precip),
+    !is.na(temp),
+    !is.na(wind_gust)
+  ) %>%
+  mutate(month = month(time_hour.y, label = TRUE)))
+
+(combined_clean %>%
+  group_by(dataset) %>%
+  summarise(start = min(time_hour.y), end = max(time_hour.y), flights = n()))
+
+```
+
+
+```{r}
+# Plotting Departure Delays with Rain and No Rain
+combined_clean %>%
+  mutate(rain = ifelse(precip > 0, "Rain", "No Rain")) %>%
+  ggplot(aes(x = rain, y = dep_delay, fill = dataset)) +
+  geom_violin(scale = "width", alpha = 0.7, trim = FALSE, position = position_dodge(0.9)) +
+  stat_summary(fun = median, geom = "point", shape = 23, fill = "white",
+               position = position_dodge(0.9)) +
+  coord_cartesian(ylim = c(0, 120)) +
+  labs(title = "Departure Delay with Rain vs No Rain",
+       x = "Weather Condition",
+       y = "Departure Delay (min)",
+       fill = "Year")
+
+```
+- This plot represents departure delays for the years 2013 and 2023 when there is rain and no rain. We can see that flights departing during raining conditions show wider and right skewed delay distributions compared to when there is no rain in 2013 and 2023. This shows that rain shows a increase in the severity of delays.
+
+```{r}
+# Plotting when precipitation is greater than 0 over the course of 12 months in a year
+combined_clean %>%
+  filter(precip > 0) %>%
+  group_by(dataset, month) %>%
+  summarise(avg_delay = mean(dep_delay, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = month, y = avg_delay, group = dataset, color = dataset)) +
+  geom_line() +
+  geom_point(size = 2) +
+  labs(title = "Monthly Delay During Rain (2013 vs 2023)", x = "Month", y = "Average Delay (min)")
+```
+- Rainy months seem to be consistent across 2013 and 2023. More specifically, rain causes significantly higher delay averages from August to November in 2013. From 2013 to 2023, we see that seasonal vulnerability to rain.
+
+```{r}
+# Scatter plot with line trend of precipitation greater than 0
+combined_clean %>%
+  filter(precip > 0) %>%
+  ggplot(aes(x = precip, y = dep_delay, color = dataset)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) +
+  coord_cartesian(xlim = c(0, .6), ylim = c(0, 100)) +
+  labs(title = "Precipitation vs Departure Delay", x = "Precipitation (inches)", y = "Departure Delay (min)")
+```
+- This plot shows the scatterplot distribution of precipitation and departure delays. In 2023, departure delays increased steadily with precipitation, indicated rainfall lead to longer delays. As precipitation increased the trend seems to die down once it reaches .4. This could be due to operational handling over storms. In 2013 however the departure delays seem to increase much faster and don't die down as precipitation increases. Overall, we see a lack of operational handling of storms as time has gone by.
+
+```{r}
+
+airports <- tibble(
+  origin = c("JFK", "LGA", "EWR"), # NYC Airports
+  lat = c(40.6398, 40.7750, 40.6925), # Latitude coordinates
+  lon = c(-73.7789, -73.8680, -74.1687) # Longitude coordinates
+)
+
+# Map function to create map of each airport and their mean departure delays in mins
+plot_delay_map <- function(data, year_label) {
+  data %>%
+    filter(dataset == year_label, precip > 0) %>%
+    group_by(origin) %>%
+    summarise(avg_delay = mean(dep_delay, na.rm = TRUE), .groups = "drop") %>%
+    left_join(airports, by = "origin") %>%
+    ggplot() +
+    borders("state", colour = "black") +
+    geom_point(aes(x = lon, y = lat, size = avg_delay),
+               shape = 21, fill = "red", alpha = 0.8) +
+    geom_text(aes(x = lon, y = lat, label = origin), nudge_y = 0.05) +
+    coord_quickmap(xlim = c(-74.5, -73.5), ylim = c(40.5, 41)) +
+    scale_size_continuous(name = "Avg Delay (min)", range = c(3, 10)) +
+    labs(title = paste("Average Delay During Rain -", year_label), subtitle = "NYC Airports",
+         x = "Longitude", y = "Latitude")
+}
+
+plot_delay_map(combined_clean, "2013") # function applied for 2013
+plot_delay_map(combined_clean, "2023") # function applied for 2023
+```
+- In this map plot, we can see a change in average delay times with respect to rain at different NYC airports. For example, in 2013, EWR has a higher average delay time with JFK having the least amount of average delay. In 2023, this switches to JFK having the highest average delay due to rain. This may be due differences in airport infrastructure/traffic/scheduling density between EWR and JFK as time passed from 2013 to 2023.
+
 #### 4. Seasonality of Delays
 
 ```{r}
