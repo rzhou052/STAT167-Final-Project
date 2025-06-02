@@ -1,0 +1,185 @@
+---
+title: "Thisisafunnygroupname's Project Report"
+author: "Richard Zhou, Adam Rui, Jonathan Darius, Ojasvi Godha, Ryan Huang, Isaac Kang"
+output: 
+  pdf_document:
+    toc: true
+---
+
+\newpage
+
+**[DELETE ALL TEXT IN BRACKETS AND TEMPLATE COMMENTS IN CODE WHEN FINISHED]**
+
+# Introduction
+
+[Write a quick introduction]
+
+# Project Description
+
+[Write about the project, our project objectives, and the questions we seek to answer]
+
+Through this data analysis, we aim to answer the 5 following questions:
+
+1.  Have flight delays improved over time overall? 
+
+    -   What about with individual airlines?\
+
+2.  Do busy destinations tend to have more or less delays?\
+
+3.  Is the weather correlated with flight delays?
+
+    -   How has this changed over time?\
+
+4.  Is the time of the year correlated between flight delays (holidays or rainy season)?\
+
+5.  Which airlines have the least delays?
+
+    -   How has this changed over time?
+
+\newpage
+
+# Research Questions
+
+## [REPLACE WITH QUESTION #1]
+
+### Data Exploration and Visualization
+
+```{r}
+# reuse/refine the plot made in the proposal
+```
+
+[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+
+### Data Analysis/Modeling/Predictions
+
+```{r}
+# code for testing your hypotheses/models
+
+# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES
+# there are plenty of premade functions to test assumptions, just search them up
+```
+
+[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+
+## [REPLACE WITH QUESTION #2]
+
+### Data Exploration and Visualization
+
+```{r}
+# reuse/refine the plot made in the proposal
+```
+
+[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+
+### Data Analysis/Modeling/Predictions
+
+```{r}
+# code for testing your hypotheses/models  
+
+# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES # there are plenty of premade functions to test assumptions, just search them up
+```
+
+[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+
+## [REPLACE WITH QUESTION #3]
+
+### Data Exploration and Visualization
+
+```{r}
+# reuse/refine the plot made in the proposal
+```
+
+[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+
+### Data Analysis/Modeling/Predictions
+
+```{r}
+# code for testing your hypotheses/models  
+
+# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES # there are plenty of premade functions to test assumptions, just search them up
+```
+
+[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+
+## [REPLACE WITH QUESTION #4]
+
+### Data Exploration and Visualization
+
+```{r}
+# reuse/refine the plot made in the proposal
+```
+
+[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+
+### Data Analysis/Modeling/Predictions
+
+```{r}
+# code for testing your hypotheses/models  
+
+# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES # there are plenty of premade functions to test assumptions, just search them up
+```
+
+[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+
+## [REPLACE WITH QUESTION #5]
+
+### Data Exploration and Visualization
+
+```{r}
+# reuse/refine the plot made in the proposal
+```
+
+[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+
+### Data Analysis/Modeling/Predictions
+
+```{r}
+# code for testing your hypotheses/models  
+
+# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES # there are plenty of premade functions to test assumptions, just search them up
+```
+
+[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+
+\newpage
+
+# Conclusions
+
+1.  **Have flight delays improved over time overall?**
+
+    -   **What about with individual airlines?**
+
+[Write a quick paragraph recapping conclusions made from your analysis]
+
+2.  **Do busy destinations tend to have more or less delays?**
+
+[Write a quick paragraph recapping conclusions made from your analysis]
+
+3.  **Is the weather correlated with flight delays?**
+
+    -   **How has this changed over time?**
+
+[Write a quick paragraph recapping conclusions made from your analysis]
+
+4.  **Is the time of the year correlated between flight delays (holidays or rainy season)?**
+
+[Write a quick paragraph recapping conclusions made from your analysis]
+
+5.  **Which airlines have the least delays?**
+
+    -   How has this changed over time?
+
+[Write a quick paragraph recapping conclusions made from your analysis]
+
+\newpage
+
+# Authors' Contributions
+
+| Author           | Contributions |
+|------------------|---------------|
+| Richard Zhou     |               |
+| Adam Rui         |               |
+| Jonathan Darius  |               |
+| Ojasvi Godha     |               |
+| Ryan Huang       |               |
+| Isaac Kang       |               |
