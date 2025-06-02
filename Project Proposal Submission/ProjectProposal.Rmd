@@ -192,3 +192,63 @@ In the case our initial objectives don't work out as planned, here are a couple 
     -   We can analyze the delay times reported for each flight and see if there is a noticable pattern between the delay times and the types of aircrafts or tail numbers.
 2.  Does the data support the idea that an aircraft with more flights per day tend to experience more delays due to the tight scheduling?
     -   We would look at aircrafts that are listed for multiple flights in a single day and see if the reported delay times are significant enough to prove that there is a reasonable relation between number of flights per day and flight delays.
+    
+
+
+work for the slideshow: (i'll incorporate into the rmd properly later)
+```{r}
+destination_stats <- flights_clean |>
+  filter(!is.na(name.y)) |>
+  group_by(dest, name.y) |>
+  summarise(
+    total_flights = n(),
+    avg_delay = mean(dep_delay + arr_delay),
+    .groups = "drop"
+  ) |>
+  mutate(
+    busyness = total_flights / sum(total_flights),
+    busyness_rank = dense_rank(busyness)
+  ) %>%
+  arrange(busyness_rank)
+
+ggplot(destination_stats, aes(x = busyness_rank, y = avg_delay, fill = busyness)) +
+  geom_col(width = 1) +
+  scale_fill_gradientn(
+    colors = c("lightblue", "pink", "red"),
+    name = "Busyness\n(proportion of total flights)"
+  ) +
+  labs(
+    x = "Destination Busyness (ascending)",
+    y = "Average Delay (minutes)",
+    title = "Flight Delays by Destination Busyness",
+    subtitle = "Each bar represents a destination airport ranked by flight volume"
+  )
+```
+
+
+```{r}
+combined_weather <- bind_rows(
+  nycflights13::flights %>% 
+    left_join(nycflights13::weather, by = c("origin", "time_hour")) %>%
+    mutate(year = 2013),
+  
+  nycflights23::flights %>% 
+    left_join(nycflights23::weather, by = c("origin", "time_hour")) %>%
+    mutate(year = 2023)
+) %>%
+filter(!is.na(dep_delay), !is.na(precip))  # Clean data
+
+# Create the combined plot
+ggplot(combined_weather, aes(x = precip, y = dep_delay, color = factor(year))) +
+  geom_point(alpha = 0.05, size = 0.5) +  # Semi-transparent small points
+  geom_smooth(method = "lm", se = TRUE) +  # Trend lines with confidence bands
+  scale_color_manual(values = c("2013" = "blue", "2023" = "red")) +
+  xlim(0, 0.5) +
+  labs(title = "Departure Delays vs Precipitation (2013 vs 2023)",
+       x = "Precipitation (inches)",
+       y = "Departure Delay (minutes)",
+       color = "Year")
+```
+
+
+    
