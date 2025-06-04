@@ -61,12 +61,86 @@ Through this data analysis, we aim to answer the 5 following questions:
 
 [Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
 
-## [REPLACE WITH QUESTION #2]
+## [Do busy destinations tend to have more or less delays?]
 
 ### Data Exploration and Visualization
 
 ```{r}
-# reuse/refine the plot made in the proposal
+library("tidyverse")
+library("nycflights13")
+library("nycflights23")
+library("dplyr")
+
+flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
+
+flights_clean <- flights_combined %>%
+  filter(!is.na(dep_delay), !is.na(arr_delay)) %>%
+  left_join(nycflights13::airlines, by = "carrier") %>%
+  left_join(nycflights13::airports, by = c("dest" = "faa"))
+
+destination_stats <- flights_clean |>
+  filter(!is.na(name.y)) |>
+  group_by(dest, name.y) |>
+  summarise(
+    total_flights = n(),
+    avg_delay = mean(dep_delay + arr_delay),
+    .groups = "drop"
+  ) |>
+  mutate(
+    busyness = total_flights / sum(total_flights),
+    busyness_rank = dense_rank(busyness)
+  ) %>%
+  arrange(busyness_rank)
+
+#_____________________ my stuff starts here the above is the data cleaning stuff_______________________
+library("ggrepel") #for the floating text labels
+
+important_airports <- destination_stats |>
+  arrange(desc(avg_delay)) |>
+  slice(c(1:5, (n()-4):n())) |>
+  bind_rows(
+    destination_stats |>
+      arrange(desc(busyness)) |> 
+      slice(1:5)  # 5 busiest
+  ) |>
+  distinct(dest, .keep_all = TRUE)
+
+#for the correlation and p value
+cor_test <- cor.test(destination_stats$busyness, destination_stats$avg_delay)
+correlation <- cor_test$estimate
+p_value <- cor_test$p.value
+
+ggplot(destination_stats, aes(x = busyness, y = avg_delay)) +
+  geom_point(aes(size = total_flights, color = avg_delay), alpha = 0.5) +
+  
+  #linear fit line
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  
+  #floating text for impotant airports
+  geom_text_repel(
+    data = important_airports,
+    aes(label = paste(dest, name.y)), 
+    size = 3,
+    box.padding = 0.5
+  ) +
+  
+  #add colors to visualise delay better
+  scale_color_gradient2(
+    low = "green", mid = "blue", high = "red", 
+    midpoint = median(destination_stats$avg_delay)
+  ) +
+  labs(
+    x = "Proportion of Total Flights (Busyness)",
+    y = "Average Delay (minutes)",
+    title = "Flight Delays vs. Destination Busyness",
+    subtitle = sprintf(
+      "Correlation: %.2f (p = %.3f)", 
+      correlation, 
+      p_value
+    ),
+    size = "Total Flights",
+    color = "Avg Delay"
+  )
 ```
 
 [Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
@@ -74,9 +148,20 @@ Through this data analysis, we aim to answer the 5 following questions:
 ### Data Analysis/Modeling/Predictions
 
 ```{r}
-# code for testing your hypotheses/models  
+library(lmtest)
+model <- lm(avg_delay ~ busyness, data = destination_stats)
+bptest(model)  # p > 0.05 = homoscedastic
 
-# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES # there are plenty of premade functions to test assumptions, just search them up
+shapiro.test(residuals(model))
+
+#accounting for heteroscedasticity (obust standard error)
+library(sandwich)
+
+
+#accounting for normality (np regression)
+library(mgcv)
+model_gam <- gam(avg_delay ~ s(busyness), data = destination_stats)
+summary(model_gam)
 ```
 
 [Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
@@ -153,7 +238,7 @@ Through this data analysis, we aim to answer the 5 following questions:
 
 2.  **Do busy destinations tend to have more or less delays?**
 
-[Write a quick paragraph recapping conclusions made from your analysis]
+[Write a quick paragraph recapping conclusions made from your analysis] i will do this tmrw i;m so sleepy
 
 3.  **Is the weather correlated with flight delays?**
 
@@ -181,5 +266,5 @@ Through this data analysis, we aim to answer the 5 following questions:
 | Adam Rui         |               |
 | Jonathan Darius  |               |
 | Ojasvi Godha     |               |
-| Ryan Huang       |               |
+| Ryan Huang       | Question 2    |
 | Isaac Kang       |               |
