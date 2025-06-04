@@ -297,31 +297,91 @@ ggplot(destination_stats, aes(x = busyness_rank, y = avg_delay, fill = busyness)
     subtitle = "Each bar represents a destination airport ranked by flight volume"
   )
 ```
+```{r}
+correlation <- cor(destination_stats$busyness, destination_stats$avg_delay, use = "complete.obs")
 
+# Create a scatter plot with trendline
+ggplot(destination_stats, aes(x = busyness, y = avg_delay)) +
+  geom_point(aes(size = total_flights), alpha = 0.6) +
+  geom_smooth(method = "lm", color = "red") +
+  labs(
+    x = "Proportion of Total Flights (Busyness)",
+    y = "Average Delay (minutes)",
+    title = paste("Relationship Between Destination Busyness and Flight Delays"),
+    subtitle = paste("Correlation:", round(correlation, 2)),
+    size = "Total Flights"
+  )
+```
 
 ```{r}
-combined_weather <- bind_rows(
-  nycflights13::flights %>% 
-    left_join(nycflights13::weather, by = c("origin", "time_hour")) %>%
-    mutate(year = 2013),
-  
-  nycflights23::flights %>% 
-    left_join(nycflights23::weather, by = c("origin", "time_hour")) %>%
-    mutate(year = 2023)
-) %>%
-filter(!is.na(dep_delay), !is.na(precip))  # Clean data
-
-# Create the combined plot
-ggplot(combined_weather, aes(x = precip, y = dep_delay, color = factor(year))) +
-  geom_point(alpha = 0.05, size = 0.5) +  # Semi-transparent small points
-  geom_smooth(method = "lm", se = TRUE) +  # Trend lines with confidence bands
-  scale_color_manual(values = c("2013" = "blue", "2023" = "red")) +
-  xlim(0, 0.5) +
-  labs(title = "Departure Delays vs Precipitation (2013 vs 2023)",
-       x = "Precipitation (inches)",
-       y = "Departure Delay (minutes)",
-       color = "Year")
+destination_stats %>%
+  mutate(busyness_quartile = ntile(busyness, 4)) %>%
+  group_by(busyness_quartile) %>%
+  summarise(avg_delay = mean(avg_delay))
 ```
+
+```{r}
+library(ggrepel)
+
+important_airports <- destination_stats |>
+  arrange(desc(avg_delay)) |>
+  slice(c(1:5, (n()-4):n())) |> # Top and bottom 5 by delay
+  bind_rows(
+    destination_stats %>% 
+      arrange(desc(busyness)) |> 
+      slice(1:5)  # Top 5 busiest
+  ) |>
+  distinct(dest, .keep_all = TRUE)
+
+cor_test <- cor.test(destination_stats$busyness, destination_stats$avg_delay)
+correlation <- cor_test$estimate
+p_value <- cor_test$p.value
+
+ggplot(destination_stats, aes(x = busyness, y = avg_delay)) +
+  geom_point(aes(size = total_flights, color = avg_delay), alpha = 0.5) +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  geom_text_repel(
+    data = important_airports,
+    aes(label = paste(dest, name.y)), 
+    size = 3,
+    box.padding = 0.5
+  ) +
+  # Color scale (unchanged)
+  scale_color_gradient2(
+    low = "green", mid = "blue", high = "red", 
+    midpoint = median(destination_stats$avg_delay)
+  ) +
+  labs(
+    x = "Proportion of Total Flights (Busyness)",
+    y = "Average Delay (minutes)",
+    title = "Flight Delays vs. Destination Busyness",
+    subtitle = sprintf(
+      "Correlation: %.2f (p = %.3f)", 
+      correlation, 
+      p_value
+    ),
+    size = "Total Flights",
+    color = "Avg Delay"
+  )
+```
+
+```{r}
+library(lmtest)
+model <- lm(avg_delay ~ busyness, data = destination_stats)
+bptest(model)  # p > 0.05 = homoscedastic
+
+shapiro.test(residuals(model))
+
+#accounting for heteroscedasticity (obust standard error)
+library(sandwich)
+
+
+#accounting for normality (np regression)
+library(mgcv)
+model_gam <- gam(avg_delay ~ s(busyness), data = destination_stats)
+summary(model_gam)
+```
+
 
 
     
