@@ -157,7 +157,7 @@ flights_seasonal <- flights_clean %>%
 
 # Run one-way ANOVA
 anova_model1 <- aov(dep_delay ~ as.factor(month), data = flights_seasonal)
-summary(anova_model)
+summary(anova_model1)
 
 # Run two-way ANOVA
 anova_model <- aov(dep_delay ~ as.factor(month)*as.factor(year), data = flights_seasonal)
