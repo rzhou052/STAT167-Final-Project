@@ -149,6 +149,26 @@ flights_clean %>%
   labs(title = "Seasonal Pattern of Departure Delays", x = "Month", y = "Avg Departure Delay (mins)", color = "Year")
 ```
 
+```{r}
+# Prepare data with numeric month
+flights_seasonal <- flights_clean %>%
+  mutate(month = month(time_hour, label = FALSE))
+
+# Run ANOVA
+anova_model <- aov(dep_delay ~ as.factor(month), data = flights_seasonal)
+summary(anova_model)
+
+# constant variance: Levene's test for homogeneity of variance across months
+leveneTest(dep_delay ~ as.factor(month), data = flights_seasonal)
+
+# Normality, large sample size sensitive to tests, use graph
+
+# Durbin-Watson test for autocorrelation/seasonal trend.
+library(lmtest)  
+dwtest(anova_model)     
+```
+
+
 -   This line chart shows how departure delays vary across months for both years. Peaks in certain months could point to holiday seasons, weather events, or seasonal congestion affecting flight performance.
 
 #### 5. Weather Impact Check
