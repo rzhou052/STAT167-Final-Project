@@ -186,25 +186,55 @@ summary(model_gam)
 
 [Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
 
-## [REPLACE WITH QUESTION #4]
+## [Question #4: Does time of year affect flight delays?]
 
 ### Data Exploration and Visualization
 
 ```{r}
-# reuse/refine the plot made in the proposal
+flights_clean %>%
+  mutate(month = month(time_hour, label = TRUE)) %>% #gets the month from time_hour
+  group_by(month, year) %>%
+  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop') %>% #computes the average departure delay for that month
+  ggplot(aes(x = month, y = avg_dep_delay, group = year, color = factor(year))) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 4) +
+  labs(title = "Seasonal Pattern of Departure Delays", x = "Month", y = "Avg Departure Delay (mins)", color = "Year") +
+  theme_bw()
 ```
 
-[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+- This line chart shows how departure delays vary across months for both years. Peaks in certain months could point to holiday seasons, weather events, or seasonal congestion affecting flight performance.
 
 ### Data Analysis/Modeling/Predictions
 
 ```{r}
-# code for testing your hypotheses/models  
+# Prepare data with numeric month
+flights_seasonal <- flights_clean %>%
+  mutate(month = month(time_hour, label = FALSE))
 
-# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES # there are plenty of premade functions to test assumptions, just search them up
+# Run one-way ANOVA
+anova_model1 <- aov(dep_delay ~ as.factor(month), data = flights_seasonal)
+summary(anova_model1)
+
+# Run two-way ANOVA
+anova_model <- aov(dep_delay ~ as.factor(month)*as.factor(year), data = flights_seasonal)
+summary(anova_model)
+
+# Linear model for two-way ANOVA to calculate adjusted R-squared
+lm1 <- lm(dep_delay ~ as.factor(month)*as.factor(year), data = flights_seasonal)
+summary(lm1)$adj.r.squared
+
+# constant variance: Levene's test for homogeneity of variance across months
+leveneTest(dep_delay ~ as.factor(month), data = flights_seasonal)
+
+# Normality, large sample size sensitive to tests, use graph
+
+# Durbin-Watson test for autocorrelation/seasonal trend.
+library(lmtest)  
+dwtest(anova_model)     
 ```
 
-[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+- This visualization shows the seasonal pattern of average departure delays across different months and years. Each line represents a year, with months on the x-axis and the average departure delay (in minutes) on the y-axis.
+
 
 ## [REPLACE WITH QUESTION #5]
 
