@@ -144,10 +144,39 @@ flights_clean %>%
   group_by(month, year) %>%
   summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop') %>% #computes the average departure delay for that month
   ggplot(aes(x = month, y = avg_dep_delay, group = year, color = factor(year))) +
-  geom_line(size = 1.2) +
-  geom_point(size = 2) +
-  labs(title = "Seasonal Pattern of Departure Delays", x = "Month", y = "Avg Departure Delay (mins)", color = "Year")
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 4) +
+  labs(title = "Seasonal Pattern of Departure Delays", x = "Month", y = "Avg Departure Delay (mins)", color = "Year") +
+  theme_bw()
 ```
+
+```{r}
+# Prepare data with numeric month
+flights_seasonal <- flights_clean %>%
+  mutate(month = month(time_hour, label = FALSE))
+
+# Run one-way ANOVA
+anova_model1 <- aov(dep_delay ~ as.factor(month), data = flights_seasonal)
+summary(anova_model1)
+
+# Run two-way ANOVA
+anova_model <- aov(dep_delay ~ as.factor(month)*as.factor(year), data = flights_seasonal)
+summary(anova_model)
+
+# Linear model for two-way ANOVA to calculate adjusted R-squared
+lm1 <- lm(dep_delay ~ as.factor(month)*as.factor(year), data = flights_seasonal)
+summary(lm1)$adj.r.squared
+
+# constant variance: Levene's test for homogeneity of variance across months
+leveneTest(dep_delay ~ as.factor(month), data = flights_seasonal)
+
+# Normality, large sample size sensitive to tests, use graph
+
+# Durbin-Watson test for autocorrelation/seasonal trend.
+library(lmtest)  
+dwtest(anova_model)     
+```
+
 
 -   This line chart shows how departure delays vary across months for both years. Peaks in certain months could point to holiday seasons, weather events, or seasonal congestion affecting flight performance.
 
