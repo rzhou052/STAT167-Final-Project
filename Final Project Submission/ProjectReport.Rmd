@@ -176,19 +176,33 @@ The scatter plot shows the average delay against the busyness of each airport, w
 ```{r}
 model <- lm(avg_delay ~ busyness, data = destination_stats)
 bptest(model)  # p > 0.05 = homoscedastic
+```
 
+The Breusch-Pagan test reveals that the data is not homoscedastic, with a p-value below 0.05 (0.0196), indicating that the variance isn't constant. 
+
+```{r}
 shapiro.test(residuals(model))
+```
 
+The Shapiro-wilk test reveals that the data is not normal, with a p value < 0.05 (6.72e-09). 
+
+```{r}
 #accounting for heteroscedasticity (robust standard error)
 coeftest(model, vcov = vcovHC(model, type = "HC1"))
+```
 
+Using robust standard errors to account for heteroscedasticity, reveals there is still no statistical significance between the correlation of delay and busyness (p-value of 0.5548, > 0.05).
+
+```{r}
 #accounting for normality (np regression)
 model_gam <- gam(avg_delay ~ s(busyness), data = destination_stats)
 summary(model_gam)
 ```
+The GAM produced an smooth term p = 0.662, which indicates that the smooth term is not significant, which is backed up by the R^2 value of near zero (-0.00701), meaning almost none of the variance can be explained by busyness.
 
-The Breusch-Pagan test reveals that the data is not homoscedastic, with a p-value below 0.05 (0.0196), and the Shapiro-wilk test reveals that the data is not normal, with a p value < 0.05 (6.72e-09). A possible explination for these issues is that delays may have a volume dependent variability, where busier airports can have both extremely on time flights and extremely delayed flights, increasing variance, or the large volume of small airports, where delays may be sporadic and unpredictable. Furthermore, it's likely that most flights are on time, or have a very short delay, resulting in an extreme right skew, violating non normality. In order to minimise the effects that these violations have on our data analysis, using robust standard errors to account for heteroscedasticity, and a generalised additive model (GAM) to account for non-normality. We observe that busyness has no statistically significant correlation with flight delays (p-value of 0.5548, > 0.05). The GAM produced an F statistic of 0.192, which indicates that the smooth term is not significant, which is backed up by the R^2 value of near zero (-0.00701), meaning almost none of the variance can be explained by busyness.
+### Results and Insights
 
+Testing revealed that the data was neither normal, nor homoscedastic. Analysis revealed that busyness has no statistically significant correlation with flight delays (p = 0.55, robust SEs), with the model explaining virtually no variance (adj. R² = -0.007). A possible explanation for these issues is that delays may have a volume dependent variability, where busier airports can have both extremely on time flights and extremely delayed flights, increasing variance, or the large volume of small airports, where delays may be sporadic and unpredictable. It's also likely that most flights are on time, or have a very short delay, resulting in an extreme right skew, violating non normality. Several limitations of only analyzing busyness and delay, arise, such as the under fitting of the GAM, with an R^2 near zero, indicating that the other predictors are missing (although they weren't required for this analysis specifically). Furthermore, although we tried to address the assumption violations with robust standard errors, the underlying skew of the data will probably require other methods to account for. Another important factor that was no accounted for was congestion of flights, different from busyness, as due to airport / airspace design, a small volume of flights may overwhelm an airport, resulting in an airport instead of busyness based delay. Our null result is still significant, however, as it is conclusive that more flights is not equal to longer delays.
 
 \newpage
 
