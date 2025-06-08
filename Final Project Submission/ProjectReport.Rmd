@@ -23,6 +23,9 @@ library("broom")
 ```
 
 ```{r, include = FALSE}
+# setting seed
+set.seed(167)
+
 # data cleaning
 flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
 
@@ -30,20 +33,6 @@ flights_clean <- flights_combined %>%
   filter(!is.na(dep_delay), !is.na(arr_delay)) %>%
   left_join(nycflights13::airlines, by = "carrier") %>%
   left_join(nycflights13::airports, by = c("dest" = "faa"))
-
-destination_stats <- flights_clean |>
-  filter(!is.na(name.y)) |>
-  group_by(dest, name.y) |>
-  summarise(
-    total_flights = n(),
-    avg_delay = mean(dep_delay + arr_delay),
-    .groups = "drop"
-  ) |>
-  mutate(
-    busyness = total_flights / sum(total_flights),
-    busyness_rank = dense_rank(busyness)
-  ) %>%
-  arrange(busyness_rank)
 ```
 
 # Introduction
@@ -109,13 +98,15 @@ qqline(dep_delay_resids, col = "red")
 
 We don't seem to meet this assumption so let's do a shifted log transformation to help. This type of log transformation ensures all values are positive before the logging takes place and makes sure to include all values possible. After, we are going to check the normality assumption again.
 
-```{r}
+```{r, include = FALSE}
 min_dep_delay <- min(flights_clean$dep_delay, na.rm = TRUE)
 flights_clean_log$log_dep_delay <- log(flights_clean_log$dep_delay - min_dep_delay + 1)
 dep_delay_model_log <- lm(log_dep_delay ~ factor(year), data = flights_clean_log)
 
 dep_delay_log_resids <- sample(residuals(dep_delay_model_log), size = 30000)
+```
 
+```{r}
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(dep_delay_log_resids)
 qqline(dep_delay_log_resids, col = "red")
@@ -137,11 +128,13 @@ This model helps us see the overall difference in departure delays between 2013 
 
 Let's do the whole process again, with arrival delays.
 
-```{r}
+```{r, include = FALSE}
 arr_delay_model <- lm(data=flights_clean_log, arr_delay~factor(year))
 
 arr_delay_resids <- sample(residuals(arr_delay_model), size = 30000)
+```
 
+```{r}
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(arr_delay_resids)
 qqline(arr_delay_resids, col = "red")
@@ -149,13 +142,15 @@ qqline(arr_delay_resids, col = "red")
 
 We seem to have the same issue as the departure delays, so let's do another shifted log transformation and test again.
 
-```{r}
+```{r, include = FALSE}
 min_arr_delay <- min(flights_clean$arr_delay, na.rm = TRUE)
 flights_clean_log$log_arr_delay <- log(flights_clean_log$arr_delay - min_arr_delay + 1)
 arr_delay_model_log <- lm(log_arr_delay ~ factor(year), data = flights_clean_log)
 
 arr_delay_log_resids <- sample(residuals(arr_delay_model_log), size = 30000)
+```
 
+```{r}
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(arr_delay_log_resids)
 qqline(arr_delay_log_resids, col = "red")
@@ -199,9 +194,11 @@ both_delay_model <- lm(data=both_delay_flights, delay_value~factor(year)*delay_t
 
 Let's first check for the normality assumption.
 
-```{r}
+```{r, include = FALSE}
 both_delay_resids <- sample(residuals(both_delay_model), size = 30000)
+```
 
+```{r}
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(both_delay_resids)
 qqline(both_delay_resids, col = "red")
@@ -230,7 +227,7 @@ summary(delay_model_airline)
 
 Based on the F-statistic, this model is significant. However, there are a few airlines that seem to be discontinued in 2023, so lets remove them and create a new model.
 
-```{r}
+```{r, include = FALSE}
 # getting airlines that only appear in both years 
 active_airlines <- flights_clean_log %>%
   group_by(name.x, year) %>%
@@ -241,16 +238,19 @@ active_airlines <- flights_clean_log %>%
 
 flights_filtered <- flights_clean_log %>%
   filter(name.x %in% active_airlines)
+```
 
-
+```{r}
 dep_delay_model_airline_filtered <- lm(data=flights_filtered, log_dep_delay~factor(year) * name.x)
 ```
 
 Now with our new model, let's check for the normality assumption.
 
-```{r}
+```{r, include = FALSE}
 dep_delay_airline_resids <- sample(residuals(dep_delay_model_airline_filtered), size = 30000)
+```
 
+```{r}
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(dep_delay_airline_resids)
 qqline(dep_delay_airline_resids, col = "red")
@@ -277,15 +277,17 @@ Based on the p-values, only 3 of these 10 airlines are statistically significant
 
 Let's do this again with arrival delays.
 
-```{r}
+```{r, include = FALSE}
 arr_delay_model_airline_filtered <- lm(data=flights_filtered, log_arr_delay~factor(year) * name.x)
 ```
 
 Let's check for the normality assumption.
 
-```{r}
+```{r, include = FALSE}
 arr_delay_airline_resids <- sample(residuals(arr_delay_model_airline_filtered), size = 30000)
+```
 
+```{r}
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(arr_delay_airline_resids)
 qqline(arr_delay_airline_resids, col = "red")
@@ -314,7 +316,7 @@ There are a few important limitations to note in this analysis. First, the assum
 
 ### Graphs
 
-```{r}
+```{r, echo = FALSE, warning = FALSE}
 both_delay_filtered <- flights_filtered %>%
   select(year, name.x, dep_delay, arr_delay) %>%
   pivot_longer(cols = c(dep_delay, arr_delay),
@@ -324,12 +326,12 @@ both_delay_filtered <- flights_filtered %>%
 
 Here, we can easily how the average arrival and departure delays have changed between 2013 and 2023. It seems that both arrival and departure delays have gotten worse.
 
-```{r}
+```{r, echo = FALSE}
 both_delay_filtered %>%
   group_by(name.x, year, delay_type) %>%
   summarise(mean_delay = mean(delay_value, na.rm = TRUE)) %>%
   ggplot(aes(x = year, y = mean_delay, color = name.x, group = name.x)) +
-  geom_line(size = 1) +
+  geom_line(linewidth = 1) +
   geom_point() +
   facet_wrap(~delay_type, scales = "free_y") +
   labs(title = "Trends in Delay by Airline (2013 vs 2023)",
@@ -344,7 +346,21 @@ both_delay_filtered %>%
 
 ### Data Exploration and Visualization
 
-```{r}
+```{r, echo = FALSE}
+destination_stats <- flights_clean |>
+  filter(!is.na(name.y)) |>
+  group_by(dest, name.y) |>
+  summarise(
+    total_flights = n(),
+    avg_delay = mean(dep_delay + arr_delay),
+    .groups = "drop"
+  ) |>
+  mutate(
+    busyness = total_flights / sum(total_flights),
+    busyness_rank = dense_rank(busyness)
+  ) %>%
+  arrange(busyness_rank)
+
 important_airports <- destination_stats |>
   arrange(desc(avg_delay)) |>
   slice(c(1:5, (n()-4):n())) |>
@@ -474,7 +490,7 @@ Testing revealed that the data was neither normal, nor homoscedastic. Analysis r
 
 ### Data Exploration and Visualization
 
-```{r}
+```{r, echo = FALSE}
 flights_clean %>%
   # get month from time_hour
   mutate(month = month(time_hour, label = TRUE)) %>% 
