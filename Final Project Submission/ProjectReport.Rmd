@@ -8,8 +8,6 @@ output:
 
 \newpage
 
-**[DELETE ALL TEXT IN BRACKETS AND TEMPLATE COMMENTS IN CODE WHEN FINISHED]**
-
 ```{r, include = FALSE}
 library("tidyverse")
 library("nycflights13")
@@ -48,11 +46,11 @@ destination_stats <- flights_clean |>
 
 # Introduction
 
-[Write a quick introduction]
+Flight delays are a constant challenge in the air travel industry, impacting efficiency and passenger satisfaction. This project aims to investigate the underlying causes of flight delays in New York City and how these patterns have evolved over time. By analyzing both recent and historical flight data, we seek to identify the major contributors to delays and provide actionable insights for improving airline performance and the overall passenger experience.
 
 # Project Description
 
-[Write about the project, our project objectives, and the questions we seek to answer]
+This analysis will utilize the `nycflights13` and `nycflights23` datasets, which contain records of flights departing from NYC airports. The project will involve exploratory data analysis (EDA), statistical testing, and comparative analysis, using tools such as `dplyr`, `ggplot2`, and many more to assess the significance of delay-related factors. Through this project, we intend to discover trends and patterns in flight delays, to provide a deeper insight into the aspects we can improve in air travel.
 
 Through this data analysis, we aim to answer the 5 following questions:
 
@@ -96,6 +94,8 @@ Through this data analysis, we aim to answer the 5 following questions:
 ```
 
 [Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+
+\newpage
 
 ## Do busy destinations tend to have more or less delays?
 
@@ -169,6 +169,8 @@ summary(model_gam)
 ```
 
 [Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+
+\newpage
 
 ## [REPLACE WITH QUESTION #3]
 
@@ -269,6 +271,8 @@ summary(lm1)$adj.r.squared
 ### Results and Insights
 
 [Talk about the possible limitations of your part. Explain how your model performed and whether you could've overfitted or underfitted, etc. Make conclusions on your result in context, and give some thoughtful insights on your results, make possible real-world conclusions from your data if possible, ideally a long paragraph]
+
+\newpage
 
 ## [REPLACE WITH QUESTION #5]
 
