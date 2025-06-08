@@ -22,19 +22,6 @@ library("gridExtra")
 library("broom")
 ```
 
-```{r, include = FALSE}
-# setting seed
-set.seed(167)
-
-# data cleaning
-flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
-
-flights_clean <- flights_combined %>%
-  filter(!is.na(dep_delay), !is.na(arr_delay)) %>%
-  left_join(nycflights13::airlines, by = "carrier") %>%
-  left_join(nycflights13::airports, by = c("dest" = "faa"))
-```
-
 # Introduction
 
 Flight delays are a constant challenge in the air travel industry, impacting efficiency and passenger satisfaction. This project aims to investigate the underlying causes of flight delays in New York City and how these patterns have evolved over time. By analyzing both recent and historical flight data, we seek to identify the major contributors to delays and provide actionable insights for improving airline performance and the overall passenger experience.
@@ -60,6 +47,23 @@ Through this data analysis, we aim to answer the 5 following questions:
 5.  Which airlines have the least delays?
 
     -   How has this changed over time?
+
+# Data Description/Preparation
+
+```{r, include = FALSE}
+# setting seed
+set.seed(167)
+
+# data cleaning
+flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
+
+flights_clean <- flights_combined %>%
+  filter(!is.na(dep_delay), !is.na(arr_delay)) %>%
+  left_join(nycflights13::airlines, by = "carrier") %>%
+  left_join(nycflights13::airports, by = c("dest" = "faa"))
+```
+
+This project utilizes data from the `nycflights13` and `nycflights23` packages, which provide detailed records of flights departing from New York City in 2013 and 2023, respectively. The two flight datasets were combined into a single dataframe, with a new `year` variable added to distinguish between the two time periods. The resulting dataset, `flights_combined`, is also filtered to remove flights with missing departure or arrival delay values, and is further joined with the `airlines` and the `airports` datasets using appropriate keys. Our key attributes for this project include `dep_delay`, `arr_delay`, `carrier`, `dest`, and `year`, which are all key in exploring trends and changes in flight performance over the ten year period. We also used the `weather` dataset from both packages in order to find key relationships between delay patterns and weather.
 
 \newpage
 
