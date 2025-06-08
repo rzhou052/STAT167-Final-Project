@@ -123,7 +123,7 @@ qqnorm(dep_delay_log_resids)
 qqline(dep_delay_log_resids, col = "red")
 ```
 
-And since the points are close to the red line, we can claim that yes the data is from a normal population.
+And since the points are fairly close to the red line, we can say that the data is not from a perfect normal distribution, so despite this we will continue as it is fairly close.
 
 ```{r}
 leveneTest(log_dep_delay ~ factor(year), data = flights_clean_log)
@@ -162,6 +162,7 @@ arr_delay_log_resids <- sample(residuals(arr_delay_model_log), size = 30000)
 qqnorm(arr_delay_log_resids)
 qqline(arr_delay_log_resids, col = "red")
 ```
+Again, the points are fairly close to the red line, so we can say that the data is not from a perfect normal distribution, it is close enough to continue.
 
 ```{r}
 leveneTest(log_arr_delay ~ factor(year), data = flights_clean_log)
@@ -207,7 +208,7 @@ qqnorm(both_delay_resids)
 qqline(both_delay_resids, col = "red")
 ```
 
-Based on this plot, we can say we meet the normality assumption. Now let's check for homoscedasticity with the Levene's Test.
+Similar to plots before, we can say we have enough to continue despite not perfectly meeting the normality assumption. Now let's check for homoscedasticity with the Levene's Test.
 
 ```{r}
 leveneTest(delay_value ~ factor(year)*delay_type,  data = both_delay_flights)
@@ -256,7 +257,7 @@ qqnorm(dep_delay_airline_resids)
 qqline(dep_delay_airline_resids, col = "red")
 ```
 
-Based on this plot, we can say we meet the normality assumption. Now let's check for homoscedasticity with the Levene's Test.
+Despite the skewness suggesting we don't perfectly meet the normality assumption, we will continue. Now let's check for homoscedasticity with the Levene's Test.
 
 ```{r}
 leveneTest(log_dep_delay ~ factor(year) * name.x, data = flights_filtered)
@@ -291,7 +292,7 @@ qqnorm(arr_delay_airline_resids)
 qqline(arr_delay_airline_resids, col = "red")
 ```
 
-Based on this plot, we can say we meet the normality assumption. Now let's check for homoscedasticity with the Levene's Test.
+Based on this plot, despite the slight skewness, we can say we meet the normality assumption in a manner similar to previous plots. Now let's check for homoscedasticity with the Levene's Test.
 
 ```{r}
 leveneTest(log_arr_delay ~ factor(year) * name.x, data = flights_filtered)
@@ -309,6 +310,8 @@ print(arr_interaction_terms)
 ```
 
 Based on the p-values here, again only 3 of these 10 airlines are statistically significant. We can still gain an idea of a general trend by looking at the coefficients. 6 out of 10 of these coefficients are negative, opposite of the departure trends. This means the majority of the airlines have actually gotten better in 2023 compared to 2013.
+
+There are a few important limitations to note in this analysis. First, the assumption of independence may be violated, as flights from the same airline or airport are likely to be correlated. However, given the large sample size and the goal of identifying average differences in delays over time, we proceeded with the models, which still offered meaningful insights. Another limitation involves the normality assumption—although we applied shifted log transformations, the residuals still showed some skewness. Given the size of the dataset, we considered the approximation acceptable. With these limitations in mind, the findings remain useful, but should be interpreted with some caution. 
 
 ### Graphs
 
@@ -537,7 +540,7 @@ summary(lm1)$adj.r.squared
 
     -   **What about with individual airlines?**
 
-From 2013 to 2023, both departure and arrival delays generally worsened, with departure delays showing a more noticeable increase. When looking at individual airlines, SkyWest, American, and Delta showed no significant change in either type of delay, suggesting stable performance over time. Frontier and JetBlue experienced significant increases in departure delays, while United showed a smaller, non-significant increase. Southwest Airlines significantly improved arrival delays, with possible improvement in departures as well. Envoy Air saw no change in departure delays but did show significant improvement in arrivals. Notably, Endeavor Air was the only airline to significantly improve in both departure and arrival delays.
+From 2013 to 2023, both departure and arrival delays generally worsened, with departure delays showing a more noticeable increase. When looking at individual airlines, SkyWest, American, and Delta showed no significant change in either type of delay, suggesting stable performance over time. Frontier and JetBlue experienced significant increases in departure delays, while United showed a smaller, non-significant increase. Southwest Airlines significantly improved arrival delays, with possible improvement in departures as well. Envoy Air saw no change in departure delays but did show significant improvement in arrivals. Notably, Endeavor Air was the only airline to significantly improve in both departure and arrival delays. 
 
 2.  **Do busy destinations tend to have more or less delays?**
 
