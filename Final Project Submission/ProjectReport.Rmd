@@ -102,7 +102,7 @@ dep_delay_model <- lm(data=flights_clean_log, dep_delay~factor(year))
 First we test for normality.
 
 ```{r}
-dep_delay_resids <- sample(residuals(dep_delay_model), size = 1000)
+dep_delay_resids <- sample(residuals(dep_delay_model), size = 30000)
 
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(dep_delay_resids)
@@ -113,10 +113,10 @@ We don't seem to meet this assumption so let's do a shifted log transformation t
 
 ```{r}
 min_dep_delay <- min(flights_clean$dep_delay, na.rm = TRUE)
-flights_clean$log_dep_delay <- log(flights_clean$dep_delay - min_dep_delay + 1)
+flights_clean_log$log_dep_delay <- log(flights_clean_log$dep_delay - min_dep_delay + 1)
 dep_delay_model_log <- lm(log_dep_delay ~ factor(year), data = flights_clean_log)
 
-dep_delay_log_resids <- sample(residuals(dep_delay_model_log), size = 1000)
+dep_delay_log_resids <- sample(residuals(dep_delay_model_log), size = 30000)
 
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(dep_delay_log_resids)
@@ -142,7 +142,7 @@ Let's do the whole process again, with arrival delays.
 ```{r}
 arr_delay_model <- lm(data=flights_clean_log, arr_delay~factor(year))
 
-arr_delay_resids <- sample(residuals(arr_delay_model), size = 1000)
+arr_delay_resids <- sample(residuals(arr_delay_model), size = 30000)
 
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(arr_delay_resids)
@@ -153,10 +153,10 @@ We seem to have the same issue as the departure delays, so let's do another shif
 
 ```{r}
 min_arr_delay <- min(flights_clean$arr_delay, na.rm = TRUE)
-flights_clean$log_arr_delay <- log(flights_clean$arr_delay - min_arr_delay + 1)
+flights_clean_log$log_arr_delay <- log(flights_clean_log$arr_delay - min_arr_delay + 1)
 arr_delay_model_log <- lm(log_arr_delay ~ factor(year), data = flights_clean_log)
 
-arr_delay_log_resids <- sample(residuals(arr_delay_model_log), size = 1000)
+arr_delay_log_resids <- sample(residuals(arr_delay_model_log), size = 30000)
 
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(arr_delay_log_resids)
@@ -200,7 +200,7 @@ both_delay_model <- lm(data=both_delay_flights, delay_value~factor(year)*delay_t
 Let's first check for the normality assumption.
 
 ```{r}
-both_delay_resids <- sample(residuals(both_delay_model), size = 1000)
+both_delay_resids <- sample(residuals(both_delay_model), size = 30000)
 
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(both_delay_resids)
@@ -249,7 +249,7 @@ dep_delay_model_airline_filtered <- lm(data=flights_filtered, log_dep_delay~fact
 Now with our new model, let's check for the normality assumption.
 
 ```{r}
-dep_delay_airline_resids <- sample(residuals(dep_delay_model_airline_filtered), size = 1000)
+dep_delay_airline_resids <- sample(residuals(dep_delay_model_airline_filtered), size = 30000)
 
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(dep_delay_airline_resids)
@@ -284,7 +284,7 @@ arr_delay_model_airline_filtered <- lm(data=flights_filtered, log_arr_delay~fact
 Let's check for the normality assumption.
 
 ```{r}
-arr_delay_airline_resids <- sample(residuals(arr_delay_model_airline_filtered), size = 1000)
+arr_delay_airline_resids <- sample(residuals(arr_delay_model_airline_filtered), size = 30000)
 
 # Now plot the Q-Q plot with the sample for easier loading
 qqnorm(arr_delay_airline_resids)
