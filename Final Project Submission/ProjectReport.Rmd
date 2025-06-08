@@ -102,7 +102,6 @@ dep_delay_model <- lm(data=flights_clean_log, dep_delay~factor(year))
 First we test for normality.
 
 ```{r}
-set.seed(111)  # for reproducibility
 dep_delay_resids <- sample(residuals(dep_delay_model), size = 1000)
 
 # Now plot the Q-Q plot with the sample for easier loading
@@ -113,11 +112,10 @@ qqline(dep_delay_resids, col = "red")
 We don't seem to meet this assumption so let's do a shifted log transformation to help. This type of log transformation ensures all values are positive before the logging takes place and makes sure to include all values possible. After, we are going to check the normality assumption again.
 
 ```{r}
-min_delay <- min(flights_clean$dep_delay, na.rm = TRUE)
-flights_clean_dep_delay <- log(flights_clean$dep_delay - min_delay + 1)
+min_dep_delay <- min(flights_clean$dep_delay, na.rm = TRUE)
+flights_clean$log_dep_delay <- log(flights_clean$dep_delay - min_dep_delay + 1)
 dep_delay_model_log <- lm(log_dep_delay ~ factor(year), data = flights_clean_log)
 
-set.seed(222)  # for reproducibility
 dep_delay_log_resids <- sample(residuals(dep_delay_model_log), size = 1000)
 
 # Now plot the Q-Q plot with the sample for easier loading
@@ -144,7 +142,6 @@ Let's do the whole process again, with arrival delays.
 ```{r}
 arr_delay_model <- lm(data=flights_clean_log, arr_delay~factor(year))
 
-set.seed(333)  # for reproducibility
 arr_delay_resids <- sample(residuals(arr_delay_model), size = 1000)
 
 # Now plot the Q-Q plot with the sample for easier loading
@@ -155,11 +152,10 @@ qqline(arr_delay_resids, col = "red")
 We seem to have the same issue as the departure delays, so let's do another shifted log transformation and test again.
 
 ```{r}
-min_arr_delay <- min(flights_clean$dep_delay, na.rm = TRUE)
-flights_clean_dep_delay <- log(flights_clean$dep_delay - min_arr_delay + 1)
+min_arr_delay <- min(flights_clean$arr_delay, na.rm = TRUE)
+flights_clean$log_arr_delay <- log(flights_clean$arr_delay - min_arr_delay + 1)
 arr_delay_model_log <- lm(log_arr_delay ~ factor(year), data = flights_clean_log)
 
-qset.seed(444)  # for reproducibility
 arr_delay_log_resids <- sample(residuals(arr_delay_model_log), size = 1000)
 
 # Now plot the Q-Q plot with the sample for easier loading
@@ -204,7 +200,6 @@ both_delay_model <- lm(data=both_delay_flights, delay_value~factor(year)*delay_t
 Let's first check for the normality assumption.
 
 ```{r}
-set.seed(555)  # for reproducibility
 both_delay_resids <- sample(residuals(both_delay_model), size = 1000)
 
 # Now plot the Q-Q plot with the sample for easier loading
@@ -254,7 +249,6 @@ dep_delay_model_airline_filtered <- lm(data=flights_filtered, log_dep_delay~fact
 Now with our new model, let's check for the normality assumption.
 
 ```{r}
-set.seed(666)  # for reproducibility
 dep_delay_airline_resids <- sample(residuals(dep_delay_model_airline_filtered), size = 1000)
 
 # Now plot the Q-Q plot with the sample for easier loading
@@ -290,7 +284,6 @@ arr_delay_model_airline_filtered <- lm(data=flights_filtered, log_arr_delay~fact
 Let's check for the normality assumption.
 
 ```{r}
-set.seed(777)  # for reproducibility
 arr_delay_airline_resids <- sample(residuals(arr_delay_model_airline_filtered), size = 1000)
 
 # Now plot the Q-Q plot with the sample for easier loading
