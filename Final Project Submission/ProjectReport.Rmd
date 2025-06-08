@@ -20,6 +20,7 @@ library("sandwich")
 library("mgcv")
 library("ggrepel")
 library("car")
+library("patchwork")
 ```
 
 ```{r, include = FALSE}
@@ -270,25 +271,87 @@ summary(lm1)$adj.r.squared
 
 [Talk about the possible limitations of your part. Explain how your model performed and whether you could've overfitted or underfitted, etc. Make conclusions on your result in context, and give some thoughtful insights on your results, make possible real-world conclusions from your data if possible, ideally a long paragraph]
 
-## [REPLACE WITH QUESTION #5]
+## Which airlines have the least delays? How has this changed over time?
 
 ### Data Exploration and Visualization
 
-```{r}
-# reuse/refine the plot made in the proposal
+```{r, include = FALSE}
+reliable_airlines <- flights_clean %>%
+  group_by(name.x, year) %>%
+  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE), .groups = "drop")
+
+top5_2013 <- reliable_airlines %>%
+  filter(year == 2013) %>%
+  slice_min(avg_dep_delay, n = 5) %>%
+  arrange(avg_dep_delay) %>%
+  mutate(name.x = factor(name.x, levels = name.x))
+
+top5_2023 <- reliable_airlines %>%
+  filter(year == 2023) %>%
+  slice_min(avg_dep_delay, n = 5) %>%
+  arrange(avg_dep_delay) %>%
+  mutate(name.x = forcats::fct_na_value_to_level(name.x, level = "Allegiant Air")) %>%
+  mutate(name.x = factor(name.x, levels = name.x))
 ```
 
-[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+```{r}
+p1 <- ggplot(top5_2013, aes(x = name.x, y = avg_dep_delay)) +
+  geom_col(fill = "#f8766d", width = 0.6) +
+  geom_text(aes(label = round(avg_dep_delay, 1)), vjust = -0.3, size = 3) +
+  labs(title = "Top 5 Airlines - 2013", x = "Airline", y = "Avg Departure Delay (min)") +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+p2 <- ggplot(top5_2023, aes(x = name.x, y = avg_dep_delay)) +
+  geom_col(fill = "#00bfc4", width = 0.6) +
+  geom_text(aes(label = round(avg_dep_delay, 1)), vjust = -0.3, size = 3) +
+  labs(title = "Top 5 Airlines - 2023", x = "Airline", y = "Avg Departure Delay (min)") +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+p1 + p2 + plot_layout(ncol = 2)
+```
+
+The bar plots show the top 5 airlines with the shortest average departure delays in 2013 and 2023. In 2013, airlines such as US Airways and Hawaiian Airlines had the lowest delays, while in 2023, Allegiant Air and Endeavor Air led in punctuality. A notable insight is that average delays increased overall in 2023, with the lowest still above 6 minutes compared to 3.7 in 2013. Alaska and American Airlines appear in both years, suggesting consistency but also a relative decline in performance. These trends point to changing airline operations and possible external factors, motivating further analysis into statistical significance and underlying causes.
 
 ### Data Analysis/Modeling/Predictions
 
-```{r}
-# code for testing your hypotheses/models  
+```{r, include = FALSE}
+data_2013 <- flights_clean %>%
+  filter(year == 2013, !is.na(dep_delay)) %>%
+  select(name.x, dep_delay) %>%
+  mutate(name.x = as.factor(name.x))
 
-# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES # there are plenty of premade functions to test assumptions, just search them up
+data_2023 <- flights_clean %>%
+  filter(year == 2023, !is.na(dep_delay)) %>%
+  select(name.x, dep_delay) %>%
+  mutate(name.x = as.factor(name.x))
+
+anova_2013 <- aov(dep_delay ~ name.x, data = data_2013)
+anova_2023 <- aov(dep_delay ~ name.x, data = data_2023)
+
+tukey_2013 <- TukeyHSD(anova_2013)
+tukey_2023 <- TukeyHSD(anova_2023)
 ```
 
-[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+```{r}
+leveneTest(dep_delay ~ name.x, data = data_2013)
+leveneTest(dep_delay ~ name.x, data = data_2023)
+```
+
+[TODO: Interpretation of levene test]
+
+```{r}
+summary(anova_2013)
+summary(anova_2023)
+```
+
+```{r}
+tukey_2013
+tukey_2023
+```
+
+One-way ANOVA tests showed the significant differences in average departure delays across airlines in both years. Tukey HSD tests further revealed specific airline pairs with meaningful differences, highlighting operational disparities. And as a result, we reject the null hypothesis and conclude that airline performance varies meaningfully, with some airlines having significantly lower delays than others in both years. Average delays increased in 2023 across the top-performing airlines, suggesting worsening punctuality industry-wide. This may be due to factors like increased air traffic, staffing shortages, or post-pandemic recovery challenges. These findings can inform consumers when choosing airlines and encourage airlines to reassess scheduling and efficiency strategies.
 
 \newpage
 
