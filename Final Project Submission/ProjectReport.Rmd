@@ -102,18 +102,27 @@ dep_delay_model <- lm(data=flights_clean_log, dep_delay~factor(year))
 First we test for normality.
 
 ```{r}
-qqnorm(residuals(dep_delay_model))
-qqline(residuals(dep_delay_model), col = "red")
+set.seed(111)  # for reproducibility
+dep_delay_resids <- sample(residuals(dep_delay_model), size = 1000)
+
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(dep_delay_resids)
+qqline(dep_delay_resids, col = "red")
 ```
 
-We don't seem to meet this assumption so let's do a log transformation to help. And check the normality assumption again.
+We don't seem to meet this assumption so let's do a shifted log transformation to help. This type of log transformation ensures all values are positive before the logging takes place and makes sure to include all values possible. After, we are going to check the normality assumption again.
 
 ```{r}
-flights_clean_log$log_dep_delay <- log1p(flights_clean_log$dep_delay)
+min_delay <- min(flights_clean$dep_delay, na.rm = TRUE)
+flights_clean_dep_delay <- log(flights_clean$dep_delay - min_delay + 1)
 dep_delay_model_log <- lm(log_dep_delay ~ factor(year), data = flights_clean_log)
 
-qqnorm(residuals(dep_delay_model_log))
-qqline(residuals(dep_delay_model_log), col = "red")
+set.seed(222)  # for reproducibility
+dep_delay_log_resids <- sample(residuals(dep_delay_model_log), size = 1000)
+
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(dep_delay_log_resids)
+qqline(dep_delay_log_resids, col = "red")
 ```
 
 And since the points are close to the red line, we can claim that yes the data is from a normal population.
@@ -135,18 +144,27 @@ Let's do the whole process again, with arrival delays.
 ```{r}
 arr_delay_model <- lm(data=flights_clean_log, arr_delay~factor(year))
 
-qqnorm(residuals(arr_delay_model))
-qqline(residuals(arr_delay_model), col = "red")
+set.seed(333)  # for reproducibility
+arr_delay_resids <- sample(residuals(arr_delay_model), size = 1000)
+
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(arr_delay_resids)
+qqline(arr_delay_resids, col = "red")
 ```
 
-We seem to have the same issue as the departure delays, so let's do another log transformation and test again.
+We seem to have the same issue as the departure delays, so let's do another shifted log transformation and test again.
 
 ```{r}
-flights_clean_log$log_arr_delay <- log1p(flights_clean_log$arr_delay)
+min_arr_delay <- min(flights_clean$dep_delay, na.rm = TRUE)
+flights_clean_dep_delay <- log(flights_clean$dep_delay - min_arr_delay + 1)
 arr_delay_model_log <- lm(log_arr_delay ~ factor(year), data = flights_clean_log)
 
-qqnorm(residuals(arr_delay_model_log))
-qqline(residuals(arr_delay_model_log), col = "red")
+qset.seed(444)  # for reproducibility
+arr_delay_log_resids <- sample(residuals(arr_delay_model_log), size = 1000)
+
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(arr_delay_log_resids)
+qqline(arr_delay_log_resids, col = "red")
 ```
 
 ```{r}
@@ -186,8 +204,12 @@ both_delay_model <- lm(data=both_delay_flights, delay_value~factor(year)*delay_t
 Let's first check for the normality assumption.
 
 ```{r}
-qqnorm(residuals(both_delay_model))
-qqline(residuals(both_delay_model))
+set.seed(555)  # for reproducibility
+both_delay_resids <- sample(residuals(both_delay_model), size = 1000)
+
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(both_delay_resids)
+qqline(both_delay_resids, col = "red")
 ```
 
 Based on this plot, we can say we meet the normality assumption. Now let's check for homoscedasticity with the Levene's Test.
@@ -232,8 +254,12 @@ dep_delay_model_airline_filtered <- lm(data=flights_filtered, log_dep_delay~fact
 Now with our new model, let's check for the normality assumption.
 
 ```{r}
-qqnorm(residuals(dep_delay_model_airline_filtered))
-qqline(residuals(dep_delay_model_airline_filtered))
+set.seed(666)  # for reproducibility
+dep_delay_airline_resids <- sample(residuals(dep_delay_model_airline_filtered), size = 1000)
+
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(dep_delay_airline_resids)
+qqline(dep_delay_airline_resids, col = "red")
 ```
 
 Based on this plot, we can say we meet the normality assumption. Now let's check for homoscedasticity with the Levene's Test.
@@ -264,8 +290,12 @@ arr_delay_model_airline_filtered <- lm(data=flights_filtered, log_arr_delay~fact
 Let's check for the normality assumption.
 
 ```{r}
-qqnorm(residuals(arr_delay_model_airline_filtered))
-qqline(residuals(arr_delay_model_airline_filtered))
+set.seed(777)  # for reproducibility
+arr_delay_airline_resids <- sample(residuals(arr_delay_model_airline_filtered), size = 1000)
+
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(arr_delay_airline_resids)
+qqline(arr_delay_airline_resids, col = "red")
 ```
 
 Based on this plot, we can say we meet the normality assumption. Now let's check for homoscedasticity with the Levene's Test.
@@ -514,7 +544,7 @@ summary(lm1)$adj.r.squared
 
     -   **What about with individual airlines?**
 
-[Write a quick paragraph recapping conclusions made from your analysis]
+From 2013 to 2023, both departure and arrival delays generally worsened, with departure delays showing a more noticeable increase. When looking at individual airlines, SkyWest, American, and Delta showed no significant change in either type of delay, suggesting stable performance over time. Frontier and JetBlue experienced significant increases in departure delays, while United showed a smaller, non-significant increase. Southwest Airlines significantly improved arrival delays, with possible improvement in departures as well. Envoy Air saw no change in departure delays but did show significant improvement in arrivals. Notably, Endeavor Air was the only airline to significantly improve in both departure and arrival delays.
 
 2.  **Do busy destinations tend to have more or less delays?**
 
@@ -545,6 +575,6 @@ summary(lm1)$adj.r.squared
 | Richard Zhou    |               |
 | Adam Rui        | Question 4    |
 | Jonathan Darius |               |
-| Ojasvi Godha    |               |
+| Ojasvi Godha    | Question 1    |
 | Ryan Huang      | Question 2    |
 | Isaac Kang      |               |
