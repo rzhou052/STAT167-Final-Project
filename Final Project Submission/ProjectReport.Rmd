@@ -162,6 +162,7 @@ arr_delay_log_resids <- sample(residuals(arr_delay_model_log), size = 30000)
 qqnorm(arr_delay_log_resids)
 qqline(arr_delay_log_resids, col = "red")
 ```
+
 Again, the points are fairly close to the red line, so we can say that the data is not from a perfect normal distribution, it is close enough to continue.
 
 ```{r}
@@ -311,7 +312,7 @@ print(arr_interaction_terms)
 
 Based on the p-values here, again only 3 of these 10 airlines are statistically significant. We can still gain an idea of a general trend by looking at the coefficients. 6 out of 10 of these coefficients are negative, opposite of the departure trends. This means the majority of the airlines have actually gotten better in 2023 compared to 2013.
 
-There are a few important limitations to note in this analysis. First, the assumption of independence may be violated, as flights from the same airline or airport are likely to be correlated. However, given the large sample size and the goal of identifying average differences in delays over time, we proceeded with the models, which still offered meaningful insights. Another limitation involves the normality assumption—although we applied shifted log transformations, the residuals still showed some skewness. Given the size of the dataset, we considered the approximation acceptable. With these limitations in mind, the findings remain useful, but should be interpreted with some caution. 
+There are a few important limitations to note in this analysis. First, the assumption of independence may be violated, as flights from the same airline or airport are likely to be correlated. However, given the large sample size and the goal of identifying average differences in delays over time, we proceeded with the models, which still offered meaningful insights. Another limitation involves the normality assumption—although we applied shifted log transformations, the residuals still showed some skewness. Given the size of the dataset, we considered the approximation acceptable. With these limitations in mind, the findings remain useful, but should be interpreted with some caution.
 
 ### Graphs
 
@@ -540,7 +541,7 @@ summary(lm1)$adj.r.squared
 
     -   **What about with individual airlines?**
 
-From 2013 to 2023, both departure and arrival delays generally worsened, with departure delays showing a more noticeable increase. When looking at individual airlines, SkyWest, American, and Delta showed no significant change in either type of delay, suggesting stable performance over time. Frontier and JetBlue experienced significant increases in departure delays, while United showed a smaller, non-significant increase. Southwest Airlines significantly improved arrival delays, with possible improvement in departures as well. Envoy Air saw no change in departure delays but did show significant improvement in arrivals. Notably, Endeavor Air was the only airline to significantly improve in both departure and arrival delays. 
+From 2013 to 2023, both departure and arrival delays generally worsened, with departure delays showing a more noticeable increase. When looking at individual airlines, SkyWest, American, and Delta showed no significant change in either type of delay, suggesting stable performance over time. Frontier and JetBlue experienced significant increases in departure delays, while United showed a smaller, non-significant increase. Southwest Airlines significantly improved arrival delays, with possible improvement in departures as well. Envoy Air saw no change in departure delays but did show significant improvement in arrivals. Notably, Endeavor Air was the only airline to significantly improve in both departure and arrival delays.
 
 2.  **Do busy destinations tend to have more or less delays?**
 
