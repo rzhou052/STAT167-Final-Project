@@ -8,8 +8,6 @@ output:
 
 \newpage
 
-**[DELETE ALL TEXT IN BRACKETS AND TEMPLATE COMMENTS IN CODE WHEN FINISHED]**
-
 ```{r, include = FALSE}
 library("tidyverse")
 library("nycflights13")
@@ -50,11 +48,11 @@ destination_stats <- flights_clean |>
 
 # Introduction
 
-[Write a quick introduction]
+Flight delays are a constant challenge in the air travel industry, impacting efficiency and passenger satisfaction. This project aims to investigate the underlying causes of flight delays in New York City and how these patterns have evolved over time. By analyzing both recent and historical flight data, we seek to identify the major contributors to delays and provide actionable insights for improving airline performance and the overall passenger experience.
 
 # Project Description
 
-[Write about the project, our project objectives, and the questions we seek to answer]
+This analysis will utilize the `nycflights13` and `nycflights23` datasets, which contain records of flights departing from NYC airports. The project will involve exploratory data analysis (EDA), statistical testing, and comparative analysis, using tools such as `dplyr`, `ggplot2`, and many more to assess the significance of delay-related factors. Through this project, we intend to discover trends and patterns in flight delays, to provide a deeper insight into the aspects we can improve in air travel.
 
 Through this data analysis, we aim to answer the 5 following questions:
 
@@ -340,6 +338,8 @@ both_delay_filtered %>%
   theme(legend.position = "none") 
 ```
 
+\newpage
+
 ## Do busy destinations tend to have more or less delays?
 
 ### Data Exploration and Visualization
@@ -355,7 +355,7 @@ important_airports <- destination_stats |>
   ) |>
   distinct(dest, .keep_all = TRUE)
 
-#for the correlation and p value
+# for the correlation and p value
 cor_test <- cor.test(destination_stats$busyness, destination_stats$avg_delay)
 correlation <- cor_test$estimate
 p_value <- cor_test$p.value
@@ -363,10 +363,10 @@ p_value <- cor_test$p.value
 ggplot(destination_stats, aes(x = busyness, y = avg_delay)) +
   geom_point(aes(size = total_flights, color = avg_delay), alpha = 0.5) +
   
-  #linear fit line
+  # linear fit line
   geom_smooth(method = "lm", color = "red", se = FALSE) +
   
-  #floating text for impotant airports
+  # floating text for impotant airports
   geom_text_repel(
     data = important_airports,
     aes(label = paste(dest, name.y)), 
@@ -374,7 +374,7 @@ ggplot(destination_stats, aes(x = busyness, y = avg_delay)) +
     box.padding = 0.5
   ) +
   
-  #add colors to visualise delay better
+  # add colors to visualise delay better
   scale_color_gradient2(
     low = "green", mid = "blue", high = "red", 
     midpoint = median(destination_stats$avg_delay)
@@ -391,27 +391,64 @@ ggplot(destination_stats, aes(x = busyness, y = avg_delay)) +
     size = "Total Flights",
     color = "Avg Delay"
   )
+
+# visualising heteroscedascity (helps w the reasoning of delays stabilizing w busyness)
+# don't really need this but though it might be nice to add
+variance_plot_data <- destination_stats |>
+  mutate(busyness_bin = cut(busyness, breaks = 10)) |>
+  group_by(busyness_bin) |>
+  summarise(variance_delay = var(avg_delay, na.rm = TRUE), n_airports = n(),mid_busyness = mean(as.numeric(sub("\\((.*),(.*)\\]", "\\1", busyness_bin)))) |>
+  filter(n_airports >= 3)
+
+ggplot(variance_plot_data, aes(x = mid_busyness, y = variance_delay)) +
+  geom_point(aes(size = n_airports), color = "steelblue", alpha = 0.7) +
+  geom_smooth(method = "loess", color = "red", se = FALSE) +
+  labs(
+    x = "Airport Busyness",
+    y = "Variance of Average Delays",
+    title = "Heteroscedasticity Check: Variance of Delays vs. Busyness",
+    subtitle = "Each point represents a group of airports with similar busyness levels",
+    size = "Number of Airports"
+  )
 ```
 
-[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+The scatter plot shows the average delay against the busyness of each airport, where the colour is is also indicative of delay length, and the size of the point is also indicative of busyness. Using the simple linear fit demonstrates no statistical significance of correlation between the two variables, however assumption checking may reveal otherwise (it doesn't, but always check). It's also apparent that as busyness increases the average delay tends to stabilize (as demonstrated in the Heteroscedasticity graph) to around 20 minutes, potentially being correlated with the available infrastructure at each airport to minimize random issues that result in higher delays.
 
 ### Data Analysis/Modeling/Predictions
 
 ```{r}
 model <- lm(avg_delay ~ busyness, data = destination_stats)
 bptest(model)  # p > 0.05 = homoscedastic
+```
 
+The Breusch-Pagan test reveals that the data is not homoscedastic, with a p-value below 0.05 (0.0196), indicating that the variance isn't constant.
+
+```{r}
 shapiro.test(residuals(model))
+```
 
-#accounting for heteroscedasticity (obust standard error)
+The Shapiro-wilk test reveals that the data is not normal, with a p value \< 0.05 (6.72e-09).
 
+```{r}
+# accounting for heteroscedasticity (robust standard error)
+coeftest(model, vcov = vcovHC(model, type = "HC1"))
+```
 
-#accounting for normality (np regression)
+Using robust standard errors to account for heteroscedasticity, reveals there is still no statistical significance between the correlation of delay and busyness (p-value of 0.5548, \> 0.05).
+
+```{r}
+# accounting for normality (np regression)
 model_gam <- gam(avg_delay ~ s(busyness), data = destination_stats)
 summary(model_gam)
 ```
 
-[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+The GAM produced an smooth term p = 0.662, which indicates that the smooth term is not significant, which is backed up by the R\^2 value of near zero (-0.00701), meaning almost none of the variance can be explained by busyness.
+
+### Results and Insights
+
+Testing revealed that the data was neither normal, nor homoscedastic. Analysis revealed that busyness has no statistically significant correlation with flight delays (p = 0.55, robust SEs), with the model explaining virtually no variance (adj. R² = -0.007). A possible explanation for these issues is that delays may have a volume dependent variability, where busier airports can have both extremely on time flights and extremely delayed flights, increasing variance, or the large volume of small airports, where delays may be sporadic and unpredictable. It's also likely that most flights are on time, or have a very short delay, resulting in an extreme right skew, violating non normality. Several limitations of only analyzing busyness and delay, arise, such as the under fitting of the GAM, with an R\^2 near zero, indicating that the other predictors are missing (although they weren't required for this analysis specifically). Furthermore, although we tried to address the assumption violations with robust standard errors, the underlying skew of the data will probably require other methods to account for. Another important factor that was no accounted for was congestion of flights, different from busyness, as due to airport / airspace design, a small volume of flights may overwhelm an airport, resulting in an airport instead of busyness based delay. Our null result is still significant, however, as it is conclusive that more flights is not equal to longer delays.
+
+\newpage
 
 ## [REPLACE WITH QUESTION #3]
 
@@ -513,6 +550,8 @@ summary(lm1)$adj.r.squared
 
 [Talk about the possible limitations of your part. Explain how your model performed and whether you could've overfitted or underfitted, etc. Make conclusions on your result in context, and give some thoughtful insights on your results, make possible real-world conclusions from your data if possible, ideally a long paragraph]
 
+\newpage
+
 ## [REPLACE WITH QUESTION #5]
 
 ### Data Exploration and Visualization
@@ -545,7 +584,7 @@ From 2013 to 2023, both departure and arrival delays generally worsened, with de
 
 2.  **Do busy destinations tend to have more or less delays?**
 
-[Write a quick paragraph recapping conclusions made from your analysis] i will do this tmrw i;m so sleepy
+Since busyness is not statistically significantly correlated with the average delay of an airport, it is unlikely to draw any concrete conclusions on whether busy destinations have more or less delay on average. From what we've analysed, however, due to the lower variance as busyness increases, it is reasonable to conclude that larger airports offer a more consistent delay experience.
 
 3.  **Is the weather correlated with flight delays?**
 
