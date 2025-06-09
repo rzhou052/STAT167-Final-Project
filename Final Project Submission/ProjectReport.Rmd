@@ -534,7 +534,7 @@ flights_clean %>%
   theme_bw()
 ```
 
-This line chart shows how departure delays vary across months for both years. Peaks in certain months could point to holiday seasons, weather events, or seasonal congestion affecting flight performance.
+This line chart shows how departure delays vary across months for both years. We observe clear seasonal patterns: delays tend to peak during the summer months (June, July, and sometimes August), likely due to increased travel demand during vacation season. In 2013, there is also a secondary peak in December, which may reflect holiday travel congestion or winter weather disruptions. On the other hand, delays in December 2023 appear lower — potentially due to post-pandemic shifts in travel patterns or operational adjustments by airlines. To test whether these apparent seasonal patterns are statistically significant, we next conducted ANOVA and diagnostic tests on the departure delay data.
 
 ### Data Analysis/Modeling/Predictions
 
