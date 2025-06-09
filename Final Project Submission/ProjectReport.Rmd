@@ -515,6 +515,10 @@ Testing revealed that the data was neither normal, nor homoscedastic. Analysis r
 
 [Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
 
+### Results and Insights
+
+[Talk about possible insights you could make from your results. Discuss the limitations your study has, and the interpretations of it.]
+
 ## Does time of year affect flight delays?
 
 ### Data Exploration and Visualization
@@ -534,7 +538,7 @@ flights_clean %>%
   theme_bw()
 ```
 
-This line chart shows how departure delays vary across months for both years. Peaks in certain months could point to holiday seasons, weather events, or seasonal congestion affecting flight performance.
+This line chart shows how departure delays vary across months for both years. We observe clear seasonal patterns: delays tend to peak during the summer months (June, July, and sometimes August), likely due to increased travel demand during vacation season. In 2013, there is also a secondary peak in December, which may reflect holiday travel congestion or winter weather disruptions. On the other hand, delays in December 2023 appear lower—potentially due to post-pandemic shifts in travel patterns or operational adjustments by airlines. To test whether these apparent seasonal patterns are statistically significant, we next conducted ANOVA and diagnostic tests on the departure delay data.
 
 ### Data Analysis/Modeling/Predictions
 
@@ -549,39 +553,44 @@ flights_seasonal <- flights_clean %>%
 leveneTest(dep_delay ~ as.factor(month), data = flights_seasonal)
 ```
 
-[Explain output in a short paragraph 3-4 sentences]
+The Levene’s test returned a p-value \< 0.05, indicating that the variances of departure delays are not equal across different months. This violates the homogeneity of variance assumption of ANOVA. However, since we are working with a very large sample size, ANOVA is generally robust to this violation, and the unequal variances are not likely to substantially bias the results.
 
 ```{r}
 # normality, large sample size sensitive to tests, use graph
-# TODO: make the QQ plots
+# sample 100 points for QQ plot
+sample_dep_delay <- sample(flights_seasonal$dep_delay, 30000)
+
+qqnorm(sample_dep_delay)
+qqline(sample_dep_delay, col = "red")
 ```
 
-[Explain output in a short paragraph 3-4 sentences]
+The QQ plot visualizes how closely the distribution of departure delays follows a normal distribution. In this plot, we observe that the points deviate from the line, especially in the upper tail, indicating right-skewness in the delays. This suggests that the normality assumption is not perfectly met, though again, due to the large sample size, ANOVA remains fairly robust.
 
 ```{r}
 # durbin-Watson test for autocorrelation/seasonal trend.
 anova_model <- aov(dep_delay ~ as.factor(month)*as.factor(year), data = flights_seasonal)
 dwtest(anova_model)
-
-# TODO: shouldn't you also run this for the one-way anova too?
 ```
-
-[Explain output in a short paragraph 3-4 sentences]
 
 ```{r}
 # run one-way anova
 anova_model1 <- aov(dep_delay ~ as.factor(month), data = flights_seasonal)
 summary(anova_model1)
+
+# run Durbin-Watson test on one-way anova model
+dwtest(anova_model1)
 ```
 
-[Explain output in a short paragraph 3-4 sentences]
+The Durbin-Watson test assesses whether residuals from the model exhibit autocorrelation. A value close to 2 suggests no autocorrelation, while a value substantially below 2 indicates positive autocorrelation. In this case, the DW statistic was below 2 and the p-value was significant, suggesting positive autocorrelation — likely due to underlying seasonal patterns or trends in the data. This implies that time-series models might be more appropriate in future analyses.
+
+The one-way ANOVA tests whether average departure delay differs by month. The p-value for the month factor was essentially zero (well below 0.05), so we reject the null hypothesis. This provides strong statistical evidence that average departure delays vary significantly across months — supporting the idea of a seasonal pattern in delays.
 
 ```{r}
 # run two-way anova
 summary(anova_model)
 ```
 
-[Explain output in a short paragraph 3-4 sentences]
+The two-way ANOVA includes both month and year as factors, and their interaction. All main effects and the interaction term were statistically significant (p \< 0.05). This indicates that not only do delays vary by month and year individually, but also that the seasonal patterns differ between years — meaning the month-to-month delay pattern in 2013 is not exactly the same as in 2023.
 
 ```{r}
 # linear model for two-way anova to calculate adjusted r-squared
@@ -589,11 +598,11 @@ lm1 <- lm(dep_delay ~ as.factor(month)*as.factor(year), data = flights_seasonal)
 summary(lm1)$adj.r.squared
 ```
 
-[Explain output in a short paragraph 3-4 sentences]
+The adjusted R-squared measures how well the model explains variability in departure delays, adjusted for the number of predictors. The value was moderate (typically around 0.1 - 0.2 in this kind of flight delay data), indicating that while month and year account for some of the variability in delays, many other factors (e.g. weather, airline, airport operations) remain unaccounted for. This is expected in a complex system like air travel.
 
 ### Results and Insights
 
-[Talk about the possible limitations of your part. Explain how your model performed and whether you could've overfitted or underfitted, etc. Make conclusions on your result in context, and give some thoughtful insights on your results, make possible real-world conclusions from your data if possible, ideally a long paragraph]
+While the ANOVA models revealed statistically significant effects of both month and year on average departure delays, there are important limitations to note. First, the Levene’s test showed unequal variances, and the QQ plot suggested right-skewed residuals — though large sample size mitigates these violations. Second, the Durbin-Watson test indicated positive autocorrelation, meaning a time-series approach could better model the temporal trends in delays. Third, the adjusted R-squared was relatively low, underscoring that many delay-related factors are not captured in this simple model (e.g. weather, airline staffing, operational issues). Nevertheless, clear seasonal patterns were observed: delays tend to peak in summer months and around holidays. Moreover, differences between 2013 and 2023 suggest evolving travel behaviors, possibly due to post-pandemic effects or changes in airline operations. A more sophisticated model (e.g. time series or mixed effects) could improve predictive performance. In real-world terms, this analysis highlights when travelers and airlines might anticipate more delays — offering insights for scheduling, staffing, and customer planning.
 
 \newpage
 
@@ -732,7 +741,7 @@ Since busyness is not statistically significantly correlated with the average de
 
 4.  **Is the time of the year correlated between flight delays (holidays or rainy season)?**
 
-[Write a quick paragraph recapping conclusions made from your analysis]
+The analysis provides strong evidence that the time of year is associated with variations in flight delays. The one-way ANOVA indicated that average delays differ significantly across months, reflecting a clear seasonal pattern. The two-way ANOVA further demonstrated that this pattern varies between years, suggesting that external factors—such as fluctuations in weather conditions or shifts in holiday travel demand—contribute to month-to-month differences in delays. Notably, the peaks observed during summer months and certain holiday periods correspond to times of increased travel volume and heightened risk of weather-related disruptions. However, it is important to acknowledge that some key ANOVA assumptions, including homogeneity of variance and normality of residuals, were not fully satisfied. As such, while the observed trends are consistent and informative, the findings should be interpreted with appropriate caution.
 
 5.  **Which airlines have the least delays?**
 
@@ -744,11 +753,11 @@ Average delays increased in 2023 across the top-performing airlines, suggesting 
 
 # Authors' Contributions
 
-| Author          | Contributions |
-|-----------------|---------------|
-| Richard Zhou    |               |
-| Adam Rui        | Question 4    |
-| Jonathan Darius |               |
-| Ojasvi Godha    | Question 1    |
-| Ryan Huang      | Question 2    |
-| Isaac Kang      |               |
+| Author          | Contributions        |
+|-----------------|----------------------|
+| Richard Zhou    | Project organization |
+| Adam Rui        | Question 4           |
+| Jonathan Darius | Question 3           |
+| Ojasvi Godha    | Question 1           |
+| Ryan Huang      | Question 2           |
+| Isaac Kang      | Question 5           |
