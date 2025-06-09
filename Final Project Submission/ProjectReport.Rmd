@@ -680,8 +680,6 @@ The results show that weather variables like precipitation, temperature, and win
 
 ## Does time of year affect flight delays?
 
-[Talk about possible insights you could make from your results. Discuss the limitations your study has, and the interpretations of it.]
-
 ### Data Exploration and Visualization
 
 ```{r, echo = FALSE}
