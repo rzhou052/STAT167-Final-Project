@@ -8,8 +8,6 @@ output:
 
 \newpage
 
-**[DELETE ALL TEXT IN BRACKETS AND TEMPLATE COMMENTS IN CODE WHEN FINISHED]**
-
 ```{r, include = FALSE}
 library("tidyverse")
 library("nycflights13")
@@ -20,6 +18,7 @@ library("sandwich")
 library("mgcv")
 library("ggrepel")
 library("car")
+<<<<<<< HEAD
 library("patchwork")
 ```
 
@@ -45,15 +44,19 @@ destination_stats <- flights_clean |>
     busyness_rank = dense_rank(busyness)
   ) %>%
   arrange(busyness_rank)
+=======
+library("gridExtra")
+library("broom")
+>>>>>>> 3df3b748af303282ece34ee391df97a114a85729
 ```
 
 # Introduction
 
-[Write a quick introduction]
+Flight delays are a constant challenge in the air travel industry, impacting efficiency and passenger satisfaction. This project aims to investigate the underlying causes of flight delays in New York City and how these patterns have evolved over time. By analyzing both recent and historical flight data, we seek to identify the major contributors to delays and provide actionable insights for improving airline performance and the overall passenger experience.
 
 # Project Description
 
-[Write about the project, our project objectives, and the questions we seek to answer]
+This analysis will utilize the `nycflights13` and `nycflights23` datasets, which contain records of flights departing from NYC airports. The project will involve exploratory data analysis (EDA), statistical testing, and comparative analysis, using tools such as `dplyr`, `ggplot2`, and many more to assess the significance of delay-related factors. Through this project, we intend to discover trends and patterns in flight delays, to provide a deeper insight into the aspects we can improve in air travel.
 
 Through this data analysis, we aim to answer the 5 following questions:
 
@@ -73,36 +76,323 @@ Through this data analysis, we aim to answer the 5 following questions:
 
     -   How has this changed over time?
 
+# Data Description/Preparation
+
+```{r, include = FALSE}
+# setting seed
+set.seed(167)
+
+# data cleaning
+flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
+
+flights_clean <- flights_combined %>%
+  filter(!is.na(dep_delay), !is.na(arr_delay)) %>%
+  left_join(nycflights13::airlines, by = "carrier") %>%
+  left_join(nycflights13::airports, by = c("dest" = "faa"))
+```
+
+This project utilizes data from the `nycflights13` and `nycflights23` packages, which provide detailed records of flights departing from New York City in 2013 and 2023, respectively. The two flight datasets were combined into a single dataframe, with a new `year` variable added to distinguish between the two time periods. The resulting dataset, `flights_combined`, is also filtered to remove flights with missing departure or arrival delay values, and is further joined with the `airlines` and the `airports` datasets using appropriate keys. Our key attributes for this project include `dep_delay`, `arr_delay`, `carrier`, `dest`, and `year`, which are all key in exploring trends and changes in flight performance over the ten year period. We also used the `weather` dataset from both packages in order to find key relationships between delay patterns and weather.
+
 \newpage
 
 # Research Questions
 
-## [REPLACE WITH QUESTION #1]
+## Have flight delays improved over time overall? What about with individual airlines?
 
-### Data Exploration and Visualization
-
-```{r}
-# reuse/refine the plot made in the proposal
+```{r, include = FALSE}
+# cleaning dataset for log transforms
+flights_clean_log <- flights_combined %>%
+  filter(!is.na(dep_delay), !is.na(arr_delay), dep_delay >= 0, arr_delay >= 0) %>%
+  left_join(nycflights13::airlines, by = "carrier") %>%
+  left_join(nycflights13::airports, by = c("dest" = "faa"))
 ```
 
-[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+### Part 1: Have flight delays improved or gotten worse between 2013 and 2023?
 
-### Data Analysis/Modeling/Predictions
+```{r, include = FALSE}
+delay_by_carrier <- flights_clean_log %>%
+  # specifies to calculate the average for each airline as well
+  group_by(name.x, year) %>%
+  summarise(avg_dep_delay = mean(dep_delay), .groups = 'drop')
 
-```{r}
-# code for testing your hypotheses/models
-
-# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES
-# there are plenty of premade functions to test assumptions, just search them up
+dep_delay_model <- lm(data=flights_clean_log, dep_delay~factor(year))
 ```
 
-[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+First we test for normality.
+
+```{r}
+dep_delay_resids <- sample(residuals(dep_delay_model), size = 30000)
+
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(dep_delay_resids)
+qqline(dep_delay_resids, col = "red")
+```
+
+We don't seem to meet this assumption so let's do a shifted log transformation to help. This type of log transformation ensures all values are positive before the logging takes place and makes sure to include all values possible. After, we are going to check the normality assumption again.
+
+```{r, include = FALSE}
+min_dep_delay <- min(flights_clean$dep_delay, na.rm = TRUE)
+flights_clean_log$log_dep_delay <- log(flights_clean_log$dep_delay - min_dep_delay + 1)
+dep_delay_model_log <- lm(log_dep_delay ~ factor(year), data = flights_clean_log)
+
+dep_delay_log_resids <- sample(residuals(dep_delay_model_log), size = 30000)
+```
+
+```{r}
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(dep_delay_log_resids)
+qqline(dep_delay_log_resids, col = "red")
+```
+
+And since the points are fairly close to the red line, we can say that the data is not from a perfect normal distribution, so despite this we will continue as it is fairly close.
+
+```{r}
+leveneTest(log_dep_delay ~ factor(year), data = flights_clean_log)
+```
+
+We can also check for homoscedasticity using the Levene's Test which is not met. The small p-value here shows signs of heteroscedasticity which means we cannot use regular 'summary()' to get results of the model. Let's look into the model itself using robust standard errors which assumes unequal error variances.
+
+```{r}
+coeftest(dep_delay_model_log, vcov = vcovHC)
+```
+
+This model helps us see the overall difference in departure delays between 2013 and 2023. The model shows a statistically significant increase in departure delays from 2013 to 2023, indicated by a positive coefficient with a very small p-value. In this context, we can conclude that that flight departure delays have gotten worse over time.
+
+Let's do the whole process again, with arrival delays.
+
+```{r, include = FALSE}
+arr_delay_model <- lm(data=flights_clean_log, arr_delay~factor(year))
+
+arr_delay_resids <- sample(residuals(arr_delay_model), size = 30000)
+```
+
+```{r}
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(arr_delay_resids)
+qqline(arr_delay_resids, col = "red")
+```
+
+We seem to have the same issue as the departure delays, so let's do another shifted log transformation and test again.
+
+```{r, include = FALSE}
+min_arr_delay <- min(flights_clean$arr_delay, na.rm = TRUE)
+flights_clean_log$log_arr_delay <- log(flights_clean_log$arr_delay - min_arr_delay + 1)
+arr_delay_model_log <- lm(log_arr_delay ~ factor(year), data = flights_clean_log)
+
+arr_delay_log_resids <- sample(residuals(arr_delay_model_log), size = 30000)
+```
+
+```{r}
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(arr_delay_log_resids)
+qqline(arr_delay_log_resids, col = "red")
+```
+
+Again, the points are fairly close to the red line, so we can say that the data is not from a perfect normal distribution, it is close enough to continue.
+
+```{r}
+leveneTest(log_arr_delay ~ factor(year), data = flights_clean_log)
+```
+
+We can, again, check for homoscedasticity using the Levene's Test which is, again, not met. The small p-value here shows signs of heteroscedasticity which means we cannot use regular 'summary()' to get results of the model. Let's look into the model itself using robust standard errors which assumes unequal error variances.
+
+```{r}
+coeftest(arr_delay_model_log, vcov = vcovHC)
+```
+
+When we compare the arrival delays, we have a statistically significant increase as well, with a positive coefficient and small p-value, indicating that arrival delays have also gotten worse between 2013 and 2023, however slightly.
+
+Let's take a quick look at the performance of both these arrival and delay models.
+
+```{r, collapse=TRUE}
+print(paste('Arrival Adj R^2: ', summary(arr_delay_model_log)$adj.r.squared))
+
+print(paste("Departure Adj R^2: ", summary(dep_delay_model_log)$adj.r.squared))
+```
+
+The Adjusted R\^2 value helps us measure the quality of the model. These are really small values which means these models are not great. But in this case the small values are fine as the dataset is large, and the focus of this question was to identify average differences in delays over time, so the models still provided meaningful insights for this question.
+
+For some additional comparison, we can try to see how much more or less departure delays have changed versus arrival delays from 2013 to 2023.
+
+```{r}
+both_delay_flights <- flights_clean_log %>%
+  select(year, log_dep_delay, log_arr_delay) %>%
+  pivot_longer(cols = c(log_dep_delay, log_arr_delay), 
+               names_to = "delay_type", 
+               values_to = "delay_value")
+
+both_delay_model <- lm(data=both_delay_flights, delay_value~factor(year)*delay_type)
+```
+
+Let's first check for the normality assumption.
+
+```{r, include = FALSE}
+both_delay_resids <- sample(residuals(both_delay_model), size = 30000)
+```
+
+```{r}
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(both_delay_resids)
+qqline(both_delay_resids, col = "red")
+```
+
+Similar to plots before, we can say we have enough to continue despite not perfectly meeting the normality assumption. Now let's check for homoscedasticity with the Levene's Test.
+
+```{r}
+leveneTest(delay_value ~ factor(year)*delay_type,  data = both_delay_flights)
+```
+
+We can check for homoscedasticity using the Levene's Test which is, again, not met. The small p-value here shows signs of heteroscedasticity which means we cannot use regular 'summary()' to get results of the model. Let's look into the model itself using robust standard errors which assumes unequal error variances.
+
+```{r}
+coeftest(both_delay_model, vcov = vcovHC)
+```
+
+The key term in the model is 'factor(year)2023:delay_typedep_delay', which represents the additional change in departure delays from 2013 to 2023 relative to arrival delays. From the two previous models, we know arrival delays increased over the years by about 10% and departure delays increased by about 28%. In this combined model, we can see that as the coefficient is positive and, based on the p-value, is statistically significant. With this, we can conclude that the departure delays not only increased over time, but did so to a significantly greater extent than arrival delays did.
+
+### Part 2: Have individual airlines gotten better or worse with delays over time?
+
+```{r}
+delay_model_airline <- lm(data=flights_clean_log, log_dep_delay~factor(year) * name.x)
+summary(delay_model_airline)
+```
+
+Based on the F-statistic, this model is significant. However, there are a few airlines that seem to be discontinued in 2023, so lets remove them and create a new model.
+
+```{r, include = FALSE}
+# getting airlines that only appear in both years 
+active_airlines <- flights_clean_log %>%
+  group_by(name.x, year) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  count(name.x) %>%
+  filter(n == 2) %>%
+  pull(name.x)
+
+flights_filtered <- flights_clean_log %>%
+  filter(name.x %in% active_airlines)
+```
+
+```{r}
+dep_delay_model_airline_filtered <- lm(data=flights_filtered, log_dep_delay~factor(year) * name.x)
+```
+
+Now with our new model, let's check for the normality assumption.
+
+```{r, include = FALSE}
+dep_delay_airline_resids <- sample(residuals(dep_delay_model_airline_filtered), size = 30000)
+```
+
+```{r}
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(dep_delay_airline_resids)
+qqline(dep_delay_airline_resids, col = "red")
+```
+
+Despite the skewness suggesting we don't perfectly meet the normality assumption, we will continue. Now let's check for homoscedasticity with the Levene's Test.
+
+```{r}
+leveneTest(log_dep_delay ~ factor(year) * name.x, data = flights_filtered)
+```
+
+Based on the small p-value, we can see signs of heteroscedasticity which means we cannot use regular 'summary()' to get results of the model. Let's look into the model itself using robust standard errors which assumes unequal error variances.
+
+```{r}
+dep_delay_robust_se <- vcovHC(dep_delay_model_airline_filtered, type = "HC1")
+dep_delay_tidy_robust_model <- tidy(coeftest(dep_delay_model_airline_filtered, vcov. = dep_delay_robust_se))
+
+# only getting interaction terms, what we need 
+dep_interaction_terms <- dep_delay_tidy_robust_model[grep(":", dep_delay_tidy_robust_model$term),]
+print(dep_interaction_terms)
+```
+
+Based on the p-values, only 3 of these 10 airlines are statistically significant. Yet despite that we can still gain an idea of a general trend by looking at the coefficients. 6 out of 10 of these coefficients are positive, which means the majority of the airlines have gotten worse in 2023 compared to 2013.
+
+Let's do this again with arrival delays.
+
+```{r, include = FALSE}
+arr_delay_model_airline_filtered <- lm(data=flights_filtered, log_arr_delay~factor(year) * name.x)
+```
+
+Let's check for the normality assumption.
+
+```{r, include = FALSE}
+arr_delay_airline_resids <- sample(residuals(arr_delay_model_airline_filtered), size = 30000)
+```
+
+```{r}
+# Now plot the Q-Q plot with the sample for easier loading
+qqnorm(arr_delay_airline_resids)
+qqline(arr_delay_airline_resids, col = "red")
+```
+
+Based on this plot, despite the slight skewness, we can say we meet the normality assumption in a manner similar to previous plots. Now let's check for homoscedasticity with the Levene's Test.
+
+```{r}
+leveneTest(log_arr_delay ~ factor(year) * name.x, data = flights_filtered)
+```
+
+Based on the small p-value, we can see signs of heteroscedasticity which means we cannot use regular 'summary()' to get results of the model. Let's look into the model itself using robust standard errors which assumes unequal error variances.
+
+```{r}
+arr_delay_robust_se <- vcovHC(arr_delay_model_airline_filtered, type = "HC1")
+arr_delay_tidy_robust_model <- tidy(coeftest(arr_delay_model_airline_filtered, vcov. = arr_delay_robust_se))
+
+# only getting interaction terms, what we need 
+arr_interaction_terms <- arr_delay_tidy_robust_model[grep(":", arr_delay_tidy_robust_model$term),]
+print(arr_interaction_terms)
+```
+
+Based on the p-values here, again only 3 of these 10 airlines are statistically significant. We can still gain an idea of a general trend by looking at the coefficients. 6 out of 10 of these coefficients are negative, opposite of the departure trends. This means the majority of the airlines have actually gotten better in 2023 compared to 2013.
+
+There are a few important limitations to note in this analysis. First, the assumption of independence may be violated, as flights from the same airline or airport are likely to be correlated. However, given the large sample size and the goal of identifying average differences in delays over time, we proceeded with the models, which still offered meaningful insights. Another limitation involves the normality assumption—although we applied shifted log transformations, the residuals still showed some skewness. Given the size of the dataset, we considered the approximation acceptable. With these limitations in mind, the findings remain useful, but should be interpreted with some caution.
+
+### Graphs
+
+```{r, echo = FALSE, warning = FALSE}
+both_delay_filtered <- flights_filtered %>%
+  select(year, name.x, dep_delay, arr_delay) %>%
+  pivot_longer(cols = c(dep_delay, arr_delay),
+               names_to = "delay_type",
+               values_to = "delay_value")
+```
+
+Here, we can easily how the average arrival and departure delays have changed between 2013 and 2023. It seems that both arrival and departure delays have gotten worse.
+
+```{r, echo = FALSE}
+both_delay_filtered %>%
+  group_by(name.x, year, delay_type) %>%
+  summarise(mean_delay = mean(delay_value, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = mean_delay, color = name.x, group = name.x)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  facet_wrap(~delay_type, scales = "free_y") +
+  labs(title = "Trends in Delay by Airline (2013 vs 2023)",
+       x = "Year", y = "Average Delay (min)") +
+  theme_minimal() +
+  theme(legend.position = "none") 
+```
+
+\newpage
 
 ## Do busy destinations tend to have more or less delays?
 
 ### Data Exploration and Visualization
 
-```{r}
+```{r, echo = FALSE}
+destination_stats <- flights_clean |>
+  filter(!is.na(name.y)) |>
+  group_by(dest, name.y) |>
+  summarise(
+    total_flights = n(),
+    avg_delay = mean(dep_delay + arr_delay),
+    .groups = "drop"
+  ) |>
+  mutate(
+    busyness = total_flights / sum(total_flights),
+    busyness_rank = dense_rank(busyness)
+  ) %>%
+  arrange(busyness_rank)
+
 important_airports <- destination_stats |>
   arrange(desc(avg_delay)) |>
   slice(c(1:5, (n()-4):n())) |>
@@ -113,7 +403,7 @@ important_airports <- destination_stats |>
   ) |>
   distinct(dest, .keep_all = TRUE)
 
-#for the correlation and p value
+# for the correlation and p value
 cor_test <- cor.test(destination_stats$busyness, destination_stats$avg_delay)
 correlation <- cor_test$estimate
 p_value <- cor_test$p.value
@@ -121,10 +411,10 @@ p_value <- cor_test$p.value
 ggplot(destination_stats, aes(x = busyness, y = avg_delay)) +
   geom_point(aes(size = total_flights, color = avg_delay), alpha = 0.5) +
   
-  #linear fit line
+  # linear fit line
   geom_smooth(method = "lm", color = "red", se = FALSE) +
   
-  #floating text for impotant airports
+  # floating text for impotant airports
   geom_text_repel(
     data = important_airports,
     aes(label = paste(dest, name.y)), 
@@ -132,7 +422,7 @@ ggplot(destination_stats, aes(x = busyness, y = avg_delay)) +
     box.padding = 0.5
   ) +
   
-  #add colors to visualise delay better
+  # add colors to visualise delay better
   scale_color_gradient2(
     low = "green", mid = "blue", high = "red", 
     midpoint = median(destination_stats$avg_delay)
@@ -149,27 +439,64 @@ ggplot(destination_stats, aes(x = busyness, y = avg_delay)) +
     size = "Total Flights",
     color = "Avg Delay"
   )
+
+# visualising heteroscedascity (helps w the reasoning of delays stabilizing w busyness)
+# don't really need this but though it might be nice to add
+variance_plot_data <- destination_stats |>
+  mutate(busyness_bin = cut(busyness, breaks = 10)) |>
+  group_by(busyness_bin) |>
+  summarise(variance_delay = var(avg_delay, na.rm = TRUE), n_airports = n(),mid_busyness = mean(as.numeric(sub("\\((.*),(.*)\\]", "\\1", busyness_bin)))) |>
+  filter(n_airports >= 3)
+
+ggplot(variance_plot_data, aes(x = mid_busyness, y = variance_delay)) +
+  geom_point(aes(size = n_airports), color = "steelblue", alpha = 0.7) +
+  geom_smooth(method = "loess", color = "red", se = FALSE) +
+  labs(
+    x = "Airport Busyness",
+    y = "Variance of Average Delays",
+    title = "Heteroscedasticity Check: Variance of Delays vs. Busyness",
+    subtitle = "Each point represents a group of airports with similar busyness levels",
+    size = "Number of Airports"
+  )
 ```
 
-[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+The scatter plot shows the average delay against the busyness of each airport, where the colour is is also indicative of delay length, and the size of the point is also indicative of busyness. Using the simple linear fit demonstrates no statistical significance of correlation between the two variables, however assumption checking may reveal otherwise (it doesn't, but always check). It's also apparent that as busyness increases the average delay tends to stabilize (as demonstrated in the Heteroscedasticity graph) to around 20 minutes, potentially being correlated with the available infrastructure at each airport to minimize random issues that result in higher delays.
 
 ### Data Analysis/Modeling/Predictions
 
 ```{r}
 model <- lm(avg_delay ~ busyness, data = destination_stats)
 bptest(model)  # p > 0.05 = homoscedastic
+```
 
+The Breusch-Pagan test reveals that the data is not homoscedastic, with a p-value below 0.05 (0.0196), indicating that the variance isn't constant.
+
+```{r}
 shapiro.test(residuals(model))
+```
 
-#accounting for heteroscedasticity (obust standard error)
+The Shapiro-wilk test reveals that the data is not normal, with a p value \< 0.05 (6.72e-09).
 
+```{r}
+# accounting for heteroscedasticity (robust standard error)
+coeftest(model, vcov = vcovHC(model, type = "HC1"))
+```
 
-#accounting for normality (np regression)
+Using robust standard errors to account for heteroscedasticity, reveals there is still no statistical significance between the correlation of delay and busyness (p-value of 0.5548, \> 0.05).
+
+```{r}
+# accounting for normality (np regression)
 model_gam <- gam(avg_delay ~ s(busyness), data = destination_stats)
 summary(model_gam)
 ```
 
-[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+The GAM produced an smooth term p = 0.662, which indicates that the smooth term is not significant, which is backed up by the R\^2 value of near zero (-0.00701), meaning almost none of the variance can be explained by busyness.
+
+### Results and Insights
+
+Testing revealed that the data was neither normal, nor homoscedastic. Analysis revealed that busyness has no statistically significant correlation with flight delays (p = 0.55, robust SEs), with the model explaining virtually no variance (adj. R² = -0.007). A possible explanation for these issues is that delays may have a volume dependent variability, where busier airports can have both extremely on time flights and extremely delayed flights, increasing variance, or the large volume of small airports, where delays may be sporadic and unpredictable. It's also likely that most flights are on time, or have a very short delay, resulting in an extreme right skew, violating non normality. Several limitations of only analyzing busyness and delay, arise, such as the under fitting of the GAM, with an R\^2 near zero, indicating that the other predictors are missing (although they weren't required for this analysis specifically). Furthermore, although we tried to address the assumption violations with robust standard errors, the underlying skew of the data will probably require other methods to account for. Another important factor that was no accounted for was congestion of flights, different from busyness, as due to airport / airspace design, a small volume of flights may overwhelm an airport, resulting in an airport instead of busyness based delay. Our null result is still significant, however, as it is conclusive that more flights is not equal to longer delays.
+
+\newpage
 
 ## [REPLACE WITH QUESTION #3]
 
@@ -195,7 +522,7 @@ summary(model_gam)
 
 ### Data Exploration and Visualization
 
-```{r}
+```{r, echo = FALSE}
 flights_clean %>%
   # get month from time_hour
   mutate(month = month(time_hour, label = TRUE)) %>% 
@@ -271,7 +598,13 @@ summary(lm1)$adj.r.squared
 
 [Talk about the possible limitations of your part. Explain how your model performed and whether you could've overfitted or underfitted, etc. Make conclusions on your result in context, and give some thoughtful insights on your results, make possible real-world conclusions from your data if possible, ideally a long paragraph]
 
+<<<<<<< HEAD
 ## Which airlines have the least delays? How has this changed over time?
+=======
+\newpage
+
+## [REPLACE WITH QUESTION #5]
+>>>>>>> 3df3b748af303282ece34ee391df97a114a85729
 
 ### Data Exploration and Visualization
 
@@ -392,11 +725,11 @@ The results show significant differences in average departure delays across airl
 
     -   **What about with individual airlines?**
 
-[Write a quick paragraph recapping conclusions made from your analysis]
+From 2013 to 2023, both departure and arrival delays generally worsened, with departure delays showing a more noticeable increase. When looking at individual airlines, SkyWest, American, and Delta showed no significant change in either type of delay, suggesting stable performance over time. Frontier and JetBlue experienced significant increases in departure delays, while United showed a smaller, non-significant increase. Southwest Airlines significantly improved arrival delays, with possible improvement in departures as well. Envoy Air saw no change in departure delays but did show significant improvement in arrivals. Notably, Endeavor Air was the only airline to significantly improve in both departure and arrival delays.
 
 2.  **Do busy destinations tend to have more or less delays?**
 
-[Write a quick paragraph recapping conclusions made from your analysis] i will do this tmrw i;m so sleepy
+Since busyness is not statistically significantly correlated with the average delay of an airport, it is unlikely to draw any concrete conclusions on whether busy destinations have more or less delay on average. From what we've analysed, however, due to the lower variance as busyness increases, it is reasonable to conclude that larger airports offer a more consistent delay experience.
 
 3.  **Is the weather correlated with flight delays?**
 
@@ -423,6 +756,6 @@ Average delays increased in 2023 across the top-performing airlines, suggesting 
 | Richard Zhou    |               |
 | Adam Rui        | Question 4    |
 | Jonathan Darius |               |
-| Ojasvi Godha    |               |
+| Ojasvi Godha    | Question 1    |
 | Ryan Huang      | Question 2    |
 | Isaac Kang      |               |
