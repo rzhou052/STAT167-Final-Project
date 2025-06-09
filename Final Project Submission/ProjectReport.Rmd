@@ -470,27 +470,173 @@ Testing revealed that the data was neither normal, nor homoscedastic. Analysis r
 
 \newpage
 
-## [REPLACE WITH QUESTION #3]
+## 3. How does weather impact flight performance, and has it changed over time?
 
 ### Data Exploration and Visualization
 
 ```{r}
 # reuse/refine the plot made in the proposal
+airport_traffic <- flights_clean %>%
+  group_by(origin, year) %>%
+  summarise(num_flights = n(), .groups = 'drop') #counts the number of  outgoing flights per airport per year
+
+ggplot(airport_traffic, aes(x = origin, y = num_flights, fill = factor(year))) +
+  geom_col(position = "dodge") +
+  labs(title = "Number of Flights per NYC Airport (2013 vs 2023)", x = "Airport", y = "Number of Flights", fill = "Year")
 ```
 
 [Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
 
-### Data Analysis/Modeling/Predictions
+```{r}
+# Join each year separately
+fl13 <- nycflights13::flights %>%
+  left_join(nycflights13::weather, by = c("year", "month", "day", "hour", "origin")) %>%
+  mutate(dataset = "2013")
+
+fl23 <- nycflights23::flights %>%
+  left_join(nycflights23::weather, by = c("year", "month", "day", "hour", "origin")) %>%
+  mutate(dataset = "2023")
+
+# Combine both years
+combined_all <- bind_rows(fl13, fl23)
+
+# Clean NaNs
+(combined_clean <- combined_all %>%
+  filter(
+    !is.na(dep_delay),
+    !is.na(precip),
+    !is.na(temp),
+    !is.na(wind_gust)
+  ) %>%
+  mutate(month = month(time_hour.y, label = TRUE)))
+
+# Verify datapoints in combined dataframe
+(combined_clean %>%
+  group_by(dataset) %>%
+  summarise(start = min(time_hour.y), end = max(time_hour.y), flights = n()))
+```
 
 ```{r}
-# code for testing your hypotheses/models  
+# Plotting Departure Delays with Rain and No Rain
+combined_clean %>%
+  mutate(rain = ifelse(precip > 0, "Rain", "No Rain")) %>%
+  ggplot(aes(x = rain, y = dep_delay, fill = dataset)) +
+  geom_violin(scale = "width", alpha = 0.7, trim = FALSE, position = position_dodge(0.9)) +
+  stat_summary(fun = median, geom = "point", shape = 23, fill = "white",
+               position = position_dodge(0.9)) +
+  coord_cartesian(ylim = c(0, 120)) +
+  labs(title = "Departure Delay with Rain vs No Rain",
+       x = "Weather Condition",
+       y = "Departure Delay (min)",
+       fill = "Year")
+```
 
-# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES # there are plenty of premade functions to test assumptions, just search them up
+```{r}
+# Plotting when precipitation is greater than 0 over the course of 12 months in a year
+combined_clean %>%
+  filter(precip > 0) %>%
+  group_by(dataset, month) %>%
+  summarise(avg_delay = mean(dep_delay, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = month, y = avg_delay, group = dataset, color = dataset)) +
+  geom_line() +
+  geom_point(size = 2) +
+  labs(title = "Monthly Delay During Rain (2013 vs 2023)", x = "Month", y = "Average Delay (min)")
+```
+
+```{r}
+# Scatter plot with line trend of precipitation greater than 0
+combined_clean %>%
+  filter(precip > 0) %>%
+  ggplot(aes(x = precip, y = dep_delay, color = dataset)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE) +
+  coord_cartesian(xlim = c(0, .6), ylim = c(0, 100)) +
+  labs(title = "Precipitation vs Departure Delay", x = "Precipitation (inches)", y = "Departure Delay (min)")
+```
+
+```{r}
+airports <- tibble(
+  origin = c("JFK", "LGA", "EWR"), # NYC Airports
+  lat = c(40.6398, 40.7750, 40.6925), # Latitude coordinates
+  lon = c(-73.7789, -73.8680, -74.1687) # Longitude coordinates
+)
+
+# Map function to create map of each airport and their mean departure delays in mins
+plot_delay_map <- function(data, year_label) {
+  data %>%
+    filter(dataset == year_label, precip > 0) %>%
+    group_by(origin) %>%
+    summarise(avg_delay = mean(dep_delay, na.rm = TRUE), .groups = "drop") %>%
+    left_join(airports, by = "origin") %>%
+    ggplot() +
+    borders("state", colour = "black") +
+    geom_point(aes(x = lon, y = lat, size = avg_delay),
+               shape = 21, fill = "red", alpha = 0.8) +
+    geom_text(aes(x = lon, y = lat, label = origin), nudge_y = 0.05) +
+    coord_quickmap(xlim = c(-74.5, -73.5), ylim = c(40.5, 41)) +
+    scale_size_continuous(name = "Avg Delay (min)", range = c(3, 10)) +
+    labs(title = paste("Average Delay During Rain -", year_label), subtitle = "NYC Airports",
+         x = "Longitude", y = "Latitude")
+}
+
+plot_delay_map(combined_clean, "2013") # function applied for 2013
+plot_delay_map(combined_clean, "2023") # function applied for 2023
+```
+
+### Data Analysis/Modeling/Predictions
+```{r}
+# code for testing your hypotheses/models  
+weather_conditions <- combined_clean %>%
+  select(dep_delay, precip, temp, wind_gust)
+```
+
+```{r}
+# Fit linear model
+model <- lm(dep_delay ~ precip + temp + wind_gust, data = weather_conditions)
+summary(model)
+```
+
+```{r}
+# One Way Anova
+anova_model_weather <- aov(dep_delay ~ precip + temp + wind_gust, data = weather_conditions)
+summary(anova_model_weather)
+```
+
+```{r}
+# --- NORMALITY CHECKS ---
+# QQ-Plot
+qqnorm(residuals(model))
+qqline(residuals(model), col = "red")
+
+# Anderson-Darling Test (better for large samples)
+ad.test(residuals(model))
+```
+
+```{r}
+# --- INDEPENDENCE CHECK ---
+# Durbin-Watson Test
+dwtest(model)
+```
+
+```{r}
+# --- HOMOSCEDASTICITY CHECK ---
+# Residuals vs Fitted plot
+plot(model$fitted.values, residuals(model),
+     main = "Residuals vs Fitted", xlab = "Fitted values", ylab = "Residuals")
+abline(h = 0, col = "red")
+
+leveneTest(dep_delay ~ factor(precip > 0), data = weather_conditions)
+```
+
+```{r}
+# --- MULTICOLLINEARITY CHECK ---
+# VIF (Variance Inflation Factor)
+vif(model)
 ```
 
 [Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
 
-## Does time of year affect flight delays?
+## 4. Does time of year affect flight delays?
 
 ### Data Exploration and Visualization
 
