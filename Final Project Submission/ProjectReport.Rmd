@@ -549,13 +549,12 @@ flights_seasonal <- flights_clean %>%
 leveneTest(dep_delay ~ as.factor(month), data = flights_seasonal)
 ```
 
-The Levene’s test returned a p-value < 0.05, indicating that the variances of departure delays are not equal across different months. This violates the homogeneity of variance assumption of ANOVA. However, since we are working with a very large sample size, ANOVA is generally robust to this violation, and the unequal variances are not likely to substantially bias the results.
+The Levene’s test returned a p-value \< 0.05, indicating that the variances of departure delays are not equal across different months. This violates the homogeneity of variance assumption of ANOVA. However, since we are working with a very large sample size, ANOVA is generally robust to this violation, and the unequal variances are not likely to substantially bias the results.
 
 ```{r}
 # normality, large sample size sensitive to tests, use graph
 # sample 100 points for QQ plot
-set.seed(123)  # for reproducibility
-sample_dep_delay <- sample(flights_seasonal$dep_delay, 100)
+sample_dep_delay <- sample(flights_seasonal$dep_delay, 30000)
 
 qqnorm(sample_dep_delay)
 qqline(sample_dep_delay, col = "red")
@@ -568,7 +567,6 @@ The QQ plot visualizes how closely the distribution of departure delays follows 
 anova_model <- aov(dep_delay ~ as.factor(month)*as.factor(year), data = flights_seasonal)
 dwtest(anova_model)
 ```
-
 
 ```{r}
 # run one-way anova
@@ -588,7 +586,7 @@ The one-way ANOVA tests whether average departure delay differs by month. The p-
 summary(anova_model)
 ```
 
-The two-way ANOVA includes both month and year as factors, and their interaction. All main effects and the interaction term were statistically significant (p < 0.05). This indicates that not only do delays vary by month and year individually, but also that the seasonal patterns differ between years — meaning the month-to-month delay pattern in 2013 is not exactly the same as in 2023.
+The two-way ANOVA includes both month and year as factors, and their interaction. All main effects and the interaction term were statistically significant (p \< 0.05). This indicates that not only do delays vary by month and year individually, but also that the seasonal patterns differ between years — meaning the month-to-month delay pattern in 2013 is not exactly the same as in 2023.
 
 ```{r}
 # linear model for two-way anova to calculate adjusted r-squared
