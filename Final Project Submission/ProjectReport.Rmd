@@ -515,6 +515,10 @@ Testing revealed that the data was neither normal, nor homoscedastic. Analysis r
 
 [Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
 
+### Results and Insights
+
+[Talk about possible insights you could make from your results. Discuss the limitations your study has, and the interpretations of it.]
+
 ## Does time of year affect flight delays?
 
 ### Data Exploration and Visualization
@@ -534,7 +538,7 @@ flights_clean %>%
   theme_bw()
 ```
 
-This line chart shows how departure delays vary across months for both years. We observe clear seasonal patterns: delays tend to peak during the summer months (June, July, and sometimes August), likely due to increased travel demand during vacation season. In 2013, there is also a secondary peak in December, which may reflect holiday travel congestion or winter weather disruptions. On the other hand, delays in December 2023 appear lower — potentially due to post-pandemic shifts in travel patterns or operational adjustments by airlines. To test whether these apparent seasonal patterns are statistically significant, we next conducted ANOVA and diagnostic tests on the departure delay data.
+This line chart shows how departure delays vary across months for both years. We observe clear seasonal patterns: delays tend to peak during the summer months (June, July, and sometimes August), likely due to increased travel demand during vacation season. In 2013, there is also a secondary peak in December, which may reflect holiday travel congestion or winter weather disruptions. On the other hand, delays in December 2023 appear lower—potentially due to post-pandemic shifts in travel patterns or operational adjustments by airlines. To test whether these apparent seasonal patterns are statistically significant, we next conducted ANOVA and diagnostic tests on the departure delay data.
 
 ### Data Analysis/Modeling/Predictions
 
@@ -749,11 +753,11 @@ Average delays increased in 2023 across the top-performing airlines, suggesting 
 
 # Authors' Contributions
 
-| Author          | Contributions |
-|-----------------|---------------|
-| Richard Zhou    |               |
-| Adam Rui        | Question 4    |
-| Jonathan Darius |               |
-| Ojasvi Godha    | Question 1    |
-| Ryan Huang      | Question 2    |
-| Isaac Kang      |               |
+| Author          | Contributions        |
+|-----------------|----------------------|
+| Richard Zhou    | Project organization |
+| Adam Rui        | Question 4           |
+| Jonathan Darius | Question 3           |
+| Ojasvi Godha    | Question 1           |
+| Ryan Huang      | Question 2           |
+| Isaac Kang      | Question 5           |
