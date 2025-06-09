@@ -633,10 +633,11 @@ summary(model)
 A linear regression model was fitted to explore how weather conditions affect departure delays, using precipitation, temperature, and wind gust as predictors. All three variables were found to be highly significant (p \< 2e-16), with precipitation having the strongest effect, where each additional inch of rain was associated with over 175 minutes of added delay. However, despite their significance, the model's adjusted R-squared is only 0.01228, suggesting that weather explains just a small portion of the variability in delays. This indicates that while weather impacts delays, many other operational or systemic factors are likely at play. Before we hold these results as law, we must check all basic assumptions on our linear model to ensure accurate results.
 
 ```{r}
+weather_conditions_sample <- sample(residuals(model), 30000)
 # --- NORMALITY CHECKS ---
 # QQ-Plot
-qqnorm(residuals(model))
-qqline(residuals(model), col = "red")
+qqnorm(weather_conditions_sample )
+qqline(weather_conditions_sample , col = "red")
 
 # Anderson-Darling Test (better for large samples)
 ad.test(residuals(model))
@@ -653,9 +654,10 @@ dwtest(model)
 The Durbin-Watson test shows significant positive autocorrelation in the residuals (DW = 1.5473, p \< 2.2e-16), indicating a violation of the independence assumption. This suggests that residuals are correlated over time, meaning the model may be missing important temporal patterns. To address this, time series modeling or including lagged predictors could improve the model’s performance.
 
 ```{r}
+sample_fitted <- sample(model$fitted.values, 30000)
 # --- HOMOSCEDASTICITY CHECK ---
 # Residuals vs Fitted plot
-plot(model$fitted.values, residuals(model),
+plot(sample_fitted, weather_conditions_sample,
      main = "Residuals vs Fitted", xlab = "Fitted values", ylab = "Residuals")
 abline(h = 0, col = "red")
 
