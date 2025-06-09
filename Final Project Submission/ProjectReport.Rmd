@@ -496,6 +496,7 @@ Testing revealed that the data was neither normal, nor homoscedastic. Analysis r
 \newpage
 
 ## 3. How does weather impact flight performance, and has it changed over time?
+========
 
 ### Data Exploration and Visualization
 
@@ -509,8 +510,7 @@ ggplot(airport_traffic, aes(x = origin, y = num_flights, fill = factor(year))) +
   geom_col(position = "dodge") +
   labs(title = "Number of Flights per NYC Airport (2013 vs 2023)", x = "Airport", y = "Number of Flights", fill = "Year")
 ```
-
-[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+This bar chart compares the number of flights at NYC airports (EWR, JFK, and LGA) in 2013 and 2023. All three airports experienced an increase in flights, with LaGuardia (LGA) showing the most significant growth. This may reflect recent infrastructure improvements at LGA and a broader rise in domestic air travel. The visualization clearly highlights these trends by contrasting the flight volumes side by side. Notably, LGA’s dramatic rise may suggest a shift in airline operations or passenger preference toward more centrally located airports.
 
 ```{r}
 # Join each year separately
@@ -540,6 +540,7 @@ combined_all <- bind_rows(fl13, fl23)
   group_by(dataset) %>%
   summarise(start = min(time_hour.y), end = max(time_hour.y), flights = n()))
 ```
+We want to combine data sets from both 2013 and 2023. If we combine these data sets, we can have a combined data frame that contains data from both years, which would allow us to visualize and compare conditions across both years.
 
 ```{r}
 # Plotting Departure Delays with Rain and No Rain
@@ -555,6 +556,7 @@ combined_clean %>%
        y = "Departure Delay (min)",
        fill = "Year")
 ```
+This violin plot compares departure delays under rainy and non-rainy conditions for the years 2013 and 2023. Overall, delays were higher during rain in both years, especially in 2013, suggesting weather remained a key factor in flight delays. Notably, 2023 shows a reduction in departure delays under both conditions, which may indicate improved scheduling, infrastructure, or weather forecasting technology. The visualization effectively shows not just the average delay but the distribution, revealing that extreme delays became less frequent by 2023.
 
 ```{r}
 # Plotting when precipitation is greater than 0 over the course of 12 months in a year
@@ -567,6 +569,7 @@ combined_clean %>%
   geom_point(size = 2) +
   labs(title = "Monthly Delay During Rain (2013 vs 2023)", x = "Month", y = "Average Delay (min)")
 ```
+This line plot compares average monthly departure delays during rain in 2013 and 2023. Overall, 2023 shows consistently lower delays, especially during peak months like October, suggesting improvements in weather-related operations. The sharp spike in delays during October 2013 highlights a possible extreme weather event or operational issue that year. The visualization helps reveal both seasonal patterns and long-term improvements in delay management.
 
 ```{r}
 # Scatter plot with line trend of precipitation greater than 0
@@ -578,6 +581,7 @@ combined_clean %>%
   coord_cartesian(xlim = c(0, .6), ylim = c(0, 100)) +
   labs(title = "Precipitation vs Departure Delay", x = "Precipitation (inches)", y = "Departure Delay (min)")
 ```
+This scatter plot shows the relationship between precipitation and departure delay for 2013 and 2023. In 2013, delays generally increased with higher precipitation, suggesting weather had a stronger negative impact on flight schedules. In contrast, the 2023 trend line flattens and even slightly declines after moderate precipitation, indicating that delays were less sensitive to rainfall. This shift may reflect improved weather related protocols, better drainage systems, or more accurate forecasting. The visualization highlights how technological or operational improvements have mitigated the effects of precipitation on delays over time.
 
 ```{r}
 airports <- tibble(
@@ -607,6 +611,7 @@ plot_delay_map <- function(data, year_label) {
 plot_delay_map(combined_clean, "2013") # function applied for 2013
 plot_delay_map(combined_clean, "2023") # function applied for 2023
 ```
+These two maps compare the average departure delay during rain at NYC airports in 2013 and 2023. In 2013, delays were generally higher, especially at EWR, which had the largest delay among the three airports. By 2023, all airports saw reduced average delays during rain, with the most noticeable improvement at EWR. The visual contrast in bubble sizes between the two years suggests significant operational or infrastructure improvements that helped reduce weather-related delays citywide. Additionally, the shift in delay distribution indicates that efforts to balance air traffic and manage congestion more efficiently may have contributed to more consistent performance across all airports.
 
 ### Data Analysis/Modeling/Predictions
 ```{r}
@@ -620,12 +625,7 @@ weather_conditions <- combined_clean %>%
 model <- lm(dep_delay ~ precip + temp + wind_gust, data = weather_conditions)
 summary(model)
 ```
-
-```{r}
-# One Way Anova
-anova_model_weather <- aov(dep_delay ~ precip + temp + wind_gust, data = weather_conditions)
-summary(anova_model_weather)
-```
+A linear regression model was fitted to explore how weather conditions affect departure delays, using precipitation, temperature, and wind gust as predictors. All three variables were found to be highly significant (p < 2e-16), with precipitation having the strongest effect, where each additional inch of rain was associated with over 175 minutes of added delay. However, despite their significance, the model's adjusted R-squared is only 0.01228, suggesting that weather explains just a small portion of the variability in delays. This indicates that while weather impacts delays, many other operational or systemic factors are likely at play. Before we hold these results as law, we must check all basic assumptions on our linear model to ensure accurate results.
 
 ```{r}
 # --- NORMALITY CHECKS ---
@@ -636,12 +636,14 @@ qqline(residuals(model), col = "red")
 # Anderson-Darling Test (better for large samples)
 ad.test(residuals(model))
 ```
+The Q-Q plot and Anderson-Darling test results both provide strong evidence that the residuals from the regression model do not follow a normal distribution assumption. The Q-Q plot shows extreme deviation from the diagonal line, particularly in the upper tail, indicating a heavy right skew and the presence of high outliers. This is confirmed by the Anderson-Darling test, which yields a test statistic of A = 75417 with a p-value < 2.2e-16, strongly rejecting the null hypothesis of normality. Normality is a key assumption for valid inference in linear regression, these results suggest that caution should be used when interpreting p-values or confidence intervals from our prior modeling.
 
 ```{r}
 # --- INDEPENDENCE CHECK ---
 # Durbin-Watson Test
 dwtest(model)
 ```
+The Durbin-Watson test shows significant positive autocorrelation in the residuals (DW = 1.5473, p < 2.2e-16), indicating a violation of the independence assumption. This suggests that residuals are correlated over time, meaning the model may be missing important temporal patterns. To address this, time series modeling or including lagged predictors could improve the model’s performance.
 
 ```{r}
 # --- HOMOSCEDASTICITY CHECK ---
@@ -652,6 +654,7 @@ abline(h = 0, col = "red")
 
 leveneTest(dep_delay ~ factor(precip > 0), data = weather_conditions)
 ```
+The residuals vs. fitted plot shows a clear funnel shape, indicating heteroscedasticity which indicates non-constant variance in the residuals across levels of fitted values. This visual pattern is strongly supported by Levene’s Test for homogeneity of variance, which is highly significant (F = 1628.5, p < 2.2e-16), rejecting the null hypothesis of equal variances. Together, these results suggest that the model violates the assumption of homoscedasticity, which can lead to inefficient estimates and unreliable standard errors.
 
 ```{r}
 # --- MULTICOLLINEARITY CHECK ---
@@ -659,16 +662,17 @@ leveneTest(dep_delay ~ factor(precip > 0), data = weather_conditions)
 vif(model)
 ```
 
-[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+The VIF values for precipitation (1.005), temperature (1.040), and wind gust (1.045) indicate very low multicollinearity among the predictors. Since all values are close to 1, there is little concern that the variables are linearly dependent. This suggests that each predictor contributes unique information to the regression model.
+
+### Results and Insights
+
+The results show that weather variables like precipitation, temperature, and wind gust are significantly correlated with departure delays, though they explain only a small fraction of the overall variance. Delays due to rain have decreased notably from 2013 to 2023, suggesting operational improvements over time. However, violations of key regression assumptions indicate that more advanced modeling may be needed for accurate prediction.
 
 
 ## 4. Does time of year affect flight delays?
 =======
-### Results and Insights
 
 [Talk about possible insights you could make from your results. Discuss the limitations your study has, and the interpretations of it.]
-
-## Does time of year affect flight delays?
 
 ### Data Exploration and Visualization
 
@@ -885,6 +889,9 @@ Since busyness is not statistically significantly correlated with the average de
 3.  **Is the weather correlated with flight delays?**
 
     -   **How has this changed over time?**
+
+Yes, weather is correlated with flight delays, as shown by the significant coefficients in the regression model, particularly precipitation, increases delays. Although the relationship is statistically significant, the model's low R-squared value (~0.012) indicates that weather explains only a small portion of the variability in delays. Over time, the impact of weather—especially rain—on delays appears to have lessened, as seen in the 2023 visualizations where delays during rain are generally lower and less variable than in 2013. Improvements in infrastructure, forecasting, and airline operations likely contributed to this reduction. Despite these improvements, all model assumptions are violated (non-normal residuals, autocorrelation, and heteroscedasticity), suggesting that more complex or time-aware models may better capture remaining delay patterns, and we must proceed with caution when interperting the results from the model.
+
 
 [Write a quick paragraph recapping conclusions made from your analysis]
 
