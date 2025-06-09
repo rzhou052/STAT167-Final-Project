@@ -18,8 +18,9 @@ library("sandwich")
 library("mgcv")
 library("ggrepel")
 library("car")
-<<<<<<< HEAD
 library("patchwork")
+library("gridExtra")
+library("broom")
 ```
 
 ```{r, include = FALSE}
@@ -44,10 +45,6 @@ destination_stats <- flights_clean |>
     busyness_rank = dense_rank(busyness)
   ) %>%
   arrange(busyness_rank)
-=======
-library("gridExtra")
-library("broom")
->>>>>>> 3df3b748af303282ece34ee391df97a114a85729
 ```
 
 # Introduction
@@ -598,13 +595,9 @@ summary(lm1)$adj.r.squared
 
 [Talk about the possible limitations of your part. Explain how your model performed and whether you could've overfitted or underfitted, etc. Make conclusions on your result in context, and give some thoughtful insights on your results, make possible real-world conclusions from your data if possible, ideally a long paragraph]
 
-<<<<<<< HEAD
-## Which airlines have the least delays? How has this changed over time?
-=======
 \newpage
 
-## [REPLACE WITH QUESTION #5]
->>>>>>> 3df3b748af303282ece34ee391df97a114a85729
+## Which airlines have the least delays? How has this changed over time?
 
 ### Data Exploration and Visualization
 
