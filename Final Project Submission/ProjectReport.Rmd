@@ -18,8 +18,36 @@ library("sandwich")
 library("mgcv")
 library("ggrepel")
 library("car")
+<<<<<<< HEAD
+library("patchwork")
+```
+
+```{r, include = FALSE}
+# data cleaning
+flights_combined <- bind_rows(nycflights13::flights %>% mutate(year = 2013), nycflights23::flights %>% mutate(year = 2023))
+
+flights_clean <- flights_combined %>%
+  filter(!is.na(dep_delay), !is.na(arr_delay)) %>%
+  left_join(nycflights13::airlines, by = "carrier") %>%
+  left_join(nycflights13::airports, by = c("dest" = "faa"))
+
+destination_stats <- flights_clean |>
+  filter(!is.na(name.y)) |>
+  group_by(dest, name.y) |>
+  summarise(
+    total_flights = n(),
+    avg_delay = mean(dep_delay + arr_delay),
+    .groups = "drop"
+  ) |>
+  mutate(
+    busyness = total_flights / sum(total_flights),
+    busyness_rank = dense_rank(busyness)
+  ) %>%
+  arrange(busyness_rank)
+=======
 library("gridExtra")
 library("broom")
+>>>>>>> 3df3b748af303282ece34ee391df97a114a85729
 ```
 
 # Introduction
@@ -570,27 +598,124 @@ summary(lm1)$adj.r.squared
 
 [Talk about the possible limitations of your part. Explain how your model performed and whether you could've overfitted or underfitted, etc. Make conclusions on your result in context, and give some thoughtful insights on your results, make possible real-world conclusions from your data if possible, ideally a long paragraph]
 
+<<<<<<< HEAD
+## Which airlines have the least delays? How has this changed over time?
+=======
 \newpage
 
 ## [REPLACE WITH QUESTION #5]
+>>>>>>> 3df3b748af303282ece34ee391df97a114a85729
 
 ### Data Exploration and Visualization
 
-```{r}
-# reuse/refine the plot made in the proposal
+```{r, include = FALSE}
+reliable_airlines <- flights_clean %>%
+  group_by(name.x, year) %>%
+  summarise(avg_dep_delay = mean(dep_delay, na.rm = TRUE), .groups = "drop")
+
+top5_2013 <- reliable_airlines %>%
+  filter(year == 2013) %>%
+  slice_min(avg_dep_delay, n = 5) %>%
+  arrange(avg_dep_delay) %>%
+  mutate(name.x = factor(name.x, levels = name.x))
+
+top5_2023 <- reliable_airlines %>%
+  filter(year == 2023) %>%
+  slice_min(avg_dep_delay, n = 5) %>%
+  arrange(avg_dep_delay) %>%
+  mutate(name.x = forcats::fct_na_value_to_level(name.x, level = "Allegiant Air")) %>%
+  mutate(name.x = factor(name.x, levels = name.x))
 ```
 
-[Discuss the visualization. What are some important takeaways? What could we possibly find interesting insights in judging from the plot? Any possible reasons for these insights? Talk about how your visualization leads to your analysis]
+```{r, echo = FALSE}
+p1 <- ggplot(top5_2013, aes(x = name.x, y = avg_dep_delay)) +
+  geom_col(fill = "#f8766d", width = 0.6) +
+  geom_text(aes(label = round(avg_dep_delay, 1)), vjust = -0.3, size = 3) +
+  labs(title = "Top 5 Airlines - 2013", x = "Airline", y = "Avg Departure Delay (min)") +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+p2 <- ggplot(top5_2023, aes(x = name.x, y = avg_dep_delay)) +
+  geom_col(fill = "#00bfc4", width = 0.6) +
+  geom_text(aes(label = round(avg_dep_delay, 1)), vjust = -0.3, size = 3) +
+  labs(title = "Top 5 Airlines - 2023", x = "Airline", y = "Avg Departure Delay (min)") +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+p1 + p2 + plot_layout(ncol = 2)
+```
+
+The bar plots highlight the top 5 airlines with the shortest average departure delays in 2013 and 2023. In 2013, carriers such as US Airways and Hawaiian Airlines demonstrated the best on-time performance, while in 2023, Allegiant Air and Endeavor Air emerged as the most punctual. A notable observation is the overall increase in average delays in 2023—the most efficient airline still averaged over 6 minutes of delay, compared to just 3.7 minutes in 2013. Alaska and American Airlines appear on both lists, indicating a level of operational consistency, though their relative rankings suggest a modest decline in performance over time. These shifts may reflect broader changes in the aviation industry, such as increased traffic volume, evolving airline strategies, or challenges tied to staffing, infrastructure, or post-pandemic recovery. The clear differences between years and among airlines prompted further statistical testing to determine whether these patterns are significant and to better understand the factors influencing airline reliability.
 
 ### Data Analysis/Modeling/Predictions
 
-```{r}
-# code for testing your hypotheses/models  
+```{r, include = FALSE}
+data_2013 <- flights_clean %>%
+  filter(year == 2013, !is.na(dep_delay)) %>%
+  select(name.x, dep_delay) %>%
+  mutate(name.x = as.factor(name.x))
 
-# DON'T FORGET TO CHECK NECESSARY ASSUMPTIONS FOR PERFORMING ANALYSES # there are plenty of premade functions to test assumptions, just search them up
+data_2023 <- flights_clean %>%
+  filter(year == 2023, !is.na(dep_delay)) %>%
+  select(name.x, dep_delay) %>%
+  mutate(name.x = as.factor(name.x))
+  
+anova_2013 <- aov(dep_delay ~ name.x, data = data_2013)
+anova_2023 <- aov(dep_delay ~ name.x, data = data_2023)
+
+tukey_2013 <- TukeyHSD(anova_2013)
+tukey_2023 <- TukeyHSD(anova_2023)
+
+tukey_2013_df <- as.data.frame(tukey_2013$`name.x`) %>%
+  mutate(pair = rownames(.)) %>%
+  arrange(`p adj`) %>%
+  head(10)
+
+tukey_2023_df <- as.data.frame(tukey_2023$`name.x`) %>%
+  mutate(pair = rownames(.)) %>%
+  arrange(`p adj`) %>%
+  head(10)
 ```
 
-[Discuss your results. Don't forget that no results is still an important conclusion, with plenty to discuss! What are some important takeaways? Any possible explanations for these takeaways? How can we apply this new found knowledge?]
+```{r}
+# flights from 2013
+shapiro.test(sample(resid(anova_2013), 5000))
+
+# flights from 2023
+shapiro.test(sample(resid(anova_2023), 5000))
+```
+
+```{r}
+# flights from 2013
+leveneTest(dep_delay ~ name.x, data = data_2013)
+
+# flights from 2023
+leveneTest(dep_delay ~ name.x, data = data_2023)
+```
+
+```{r}
+# flights from 2013
+dwtest(dep_delay ~ name.x, data = data_2013)
+
+# flights from 2023
+dwtest(dep_delay ~ name.x, data = data_2023)
+```
+
+To ensure the validity of our ANOVA results, we tested all three key assumptions: normality of residuals, homogeneity of variance, and independence of observations. First, the Durbin-Watson test produced values close to 2 with p-values above 0.05, confirming that the residuals were independent. Levene’s Test showed p-values greater than 0.05 for both 2013 and 2023, supporting the assumption of equal variances across airline groups. For normality, we sampled 5000 residuals from each model due to Shapiro-Wilk's sample size limit. Lastly, both years returned p-values below 0.05 in the Shapiro-Wilk test, indicating some deviation from normality. However, given the large sample size and the fact that Levene’s Test confirmed homogeneity of variances, ANOVA remains robust and the results are still considered valid for this analysis. Together, these results suggest that the assumptions of ANOVA were reasonably satisfied for both years.
+
+```{r}
+summary(anova_2013)
+summary(anova_2023)
+
+tukey_2013_df
+tukey_2023_df
+```
+
+The ANOVA results showed significant differences in average departure delays across airlines in both 2013 and 2023. Tukey HSD tests further revealed specific airline pairs with meaningful differences, highlighting operational disparities. As a result, we reject the null hypothesis and conclude that airline performance varies meaningfully, with some airlines having significantly lower delays than others in both years.
+
+### Results and Insights
+
+The results show significant differences in average departure delays across airlines in both 2013 and 2023, with some carriers consistently outperforming others. Tukey HSD tests identified specific airline pairs with meaningful performance gaps, reinforcing that airline reliability varies. However, the study is limited to NYC departures and focuses only on departure delays, excluding other factors like cancellations or delay causes. Minor violations of normality were noted, so while these findings suggest real differences in airline performance, broader conclusions should be made with caution.
 
 \newpage
 
@@ -620,7 +745,7 @@ Since busyness is not statistically significantly correlated with the average de
 
     -   How has this changed over time?
 
-[Write a quick paragraph recapping conclusions made from your analysis]
+Average delays increased in 2023 across the top-performing airlines, suggesting worsening punctuality industry-wide. This may be due to factors like increased air traffic, staffing shortages, or post-pandemic recovery challenges. These findings can inform consumers when choosing airlines and encourage airlines to reassess scheduling and efficiency strategies. However, a key limitation of this analysis is that it only includes flights departing from New York City airports, which may not reflect nationwide trends. Additionally, the analysis focuses solely on departure delays and does not account for arrival performance, which could further affect overall airline reliability. Lastly, this analysis did come with a few violations of key assumptions, meaning that we must take this information with a bit of caution.
 
 \newpage
 
